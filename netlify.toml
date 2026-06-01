@@ -1,0 +1,37 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+[[redirects]]
+  from = "/api/print"
+  to = "/.netlify/functions/print"
+  status = 200
+
+[[redirects]]
+  from = "/api/jobs"
+  to = "/.netlify/functions/jobs"
+  status = 200
+
+[[redirects]]
+  from = "/api/complete"
+  to = "/.netlify/functions/complete"
+  status = 200
+
+[[redirects]]
+  from = "/api/fail"
+  to = "/.netlify/functions/fail"
+  status = 200
+
+[[redirects]]
+  from = "/api/translate"
+  to = "/.netlify/functions/translate"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
