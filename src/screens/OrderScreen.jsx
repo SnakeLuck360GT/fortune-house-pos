@@ -4,6 +4,7 @@ import SearchBar    from '../components/SearchBar.jsx'
 import MenuItemCard from '../components/MenuItemCard.jsx'
 import OrderPanel   from '../components/OrderPanel.jsx'
 import ShareBoxModal from '../components/ShareBoxModal.jsx'
+import DrinkPickerModal from '../components/DrinkPickerModal.jsx'
 import { useMenu }  from '../hooks/useMenu.js'
 import { useOrder } from '../hooks/useOrder.js'
 
@@ -19,6 +20,7 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
   const [printing,     setPrinting]     = useState(false)
   const [toast,        setToast]        = useState(null)
   const [shareBoxItem, setShareBoxItem] = useState(null)
+  const [drinkItem,    setDrinkItem]    = useState(null)
 
   const displayLang = settings?.displayLang || 'both'
   const tableNumber = settings?.tableNumber || ''
@@ -37,11 +39,13 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
 
   const handleAddItem = useCallback((item) => {
     if (item.isShareBox) { setShareBoxItem(item); return }
+    if (item.isDrink)    { setDrinkItem(item);    return }
     order.addItem(item)
   }, [order])
 
   const handleSearchSelect = useCallback((item) => {
     if (item.isShareBox) { setShareBoxItem(item); return }
+    if (item.isDrink)    { setDrinkItem(item);    return }
     order.addItem(item)
     menu.clearSearch()
   }, [order, menu])
@@ -49,6 +53,11 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
   function handleShareBoxConfirm(drinkNote) {
     order.addItem({ ...shareBoxItem, note: drinkNote })
     setShareBoxItem(null)
+  }
+
+  function handleDrinkConfirm(drinkName) {
+    order.addItem({ ...drinkItem, note: drinkName })
+    setDrinkItem(null)
   }
 
   async function handlePrint() {
@@ -225,6 +234,14 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
         <ShareBoxModal
           onConfirm={handleShareBoxConfirm}
           onCancel={() => setShareBoxItem(null)}
+        />
+      )}
+
+      {drinkItem && (
+        <DrinkPickerModal
+          item={drinkItem}
+          onConfirm={handleDrinkConfirm}
+          onCancel={() => setDrinkItem(null)}
         />
       )}
 

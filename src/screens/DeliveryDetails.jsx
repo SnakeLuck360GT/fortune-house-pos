@@ -121,7 +121,6 @@ export default function DeliveryDetails({ onNavigate, onConfirm, t }) {
                 value={houseNumber}
                 onChange={e => setHouseNumber(e.target.value)}
                 placeholder="e.g.  42  ·  Flat 3  ·  Rose Cottage"
-                autoFocus
               />
             </div>
 

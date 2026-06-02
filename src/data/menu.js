@@ -183,8 +183,8 @@ export const menu = [
     category: 'Drinks',
     categoryZh: '饮料',
     items: [
-      { id: 'dk01', nameEn: 'Soft Drink (Can)',                          nameZh: '软饮料 (罐装)',       price: 1.10 },
-      { id: 'dk02', nameEn: 'Soft Drink (Bottle)',                       nameZh: '软饮料 (瓶装)',       price: 2.50 },
+      { id: 'dk01', nameEn: 'Soft Drink (Can)',    nameZh: '软饮料 (罐装)', price: 1.10, isDrink: true },
+      { id: 'dk02', nameEn: 'Soft Drink (Bottle)', nameZh: '软饮料 (瓶装)', price: 2.50, isDrink: true },
     ],
   },
   {

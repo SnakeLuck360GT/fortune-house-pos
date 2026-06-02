@@ -9,6 +9,12 @@ export function formatPostcode(raw) {
   return clean.length >= 5 ? `${clean.slice(0, -3)} ${clean.slice(-3)}` : clean
 }
 
+function timeoutSignal(ms) {
+  const ctrl = new AbortController()
+  setTimeout(() => ctrl.abort(), ms)
+  return ctrl.signal
+}
+
 /**
  * FAST (~300ms): validates postcode via postcodes.io and reverse-geocodes
  * to get the road name. Returns { postcode, road, lat, lon }.
@@ -18,7 +24,7 @@ export async function fetchPostcodeInfo(rawPostcode) {
 
   const pcRes = await fetch(
     `https://api.postcodes.io/postcodes/${encodeURIComponent(postcode.replace(/\s/g, ''))}`,
-    { signal: AbortSignal.timeout(4000) }
+    { signal: timeoutSignal(4000) }
   )
   const pcData = await pcRes.json()
   if (pcData.status !== 200 || !pcData.result) throw new Error('Invalid postcode')
@@ -29,7 +35,7 @@ export async function fetchPostcodeInfo(rawPostcode) {
   try {
     const revRes = await fetch(
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=17&addressdetails=1`,
-      { headers: { 'User-Agent': 'FortuneHousePOS/1.0', 'Accept-Language': 'en-GB' }, signal: AbortSignal.timeout(4000) }
+      { headers: { 'User-Agent': 'FortuneHousePOS/1.0', 'Accept-Language': 'en-GB' }, signal: timeoutSignal(4000) }
     )
     if (revRes.ok) {
       const rev = await revRes.json()
@@ -95,7 +101,7 @@ export async function fetchDriveMinutes(destLat, destLon) {
     const { lat, lon } = FORTUNE_HOUSE
     const res = await fetch(
       `https://router.project-osrm.org/route/v1/driving/${lon},${lat};${destLon},${destLat}?overview=false`,
-      { signal: AbortSignal.timeout(6000) }
+      { signal: timeoutSignal(6000) }
     )
     if (!res.ok) return null
     const secs = (await res.json())?.routes?.[0]?.duration
