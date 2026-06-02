@@ -1,5 +1,11 @@
 import { getStore } from '@netlify/blobs'
 
+const blobStore = () => getStore({
+  name: 'print-jobs',
+  siteID: process.env.NETLIFY_SITE_ID,
+  token:  process.env.NETLIFY_TOKEN,
+})
+
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -44,7 +50,7 @@ export const handler = async (event) => {
   }
 
   try {
-    const store = getStore('print-jobs')
+    const store = blobStore()
 
     // Save the job itself
     await store.set(`job:${jobId}`, JSON.stringify(job))

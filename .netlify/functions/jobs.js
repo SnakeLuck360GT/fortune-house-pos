@@ -1,5 +1,11 @@
 import { getStore } from '@netlify/blobs'
 
+const blobStore = () => getStore({
+  name: 'print-jobs',
+  siteID: process.env.NETLIFY_SITE_ID,
+  token:  process.env.NETLIFY_TOKEN,
+})
+
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
@@ -19,7 +25,7 @@ export const handler = async (event) => {
   const statusFilter = event.queryStringParameters?.status || 'all'
 
   try {
-    const store = getStore('print-jobs')
+    const store = blobStore()
 
     // Load index
     let index = []
