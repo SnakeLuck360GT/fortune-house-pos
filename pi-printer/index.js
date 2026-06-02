@@ -178,7 +178,7 @@ function buildReceiptBuffers(job) {
           chunks.push(CMD_DOUBLE_SIZE)
           chunks.push(encodeText(`${prefix} ${zh}\n`))
           chunks.push(CMD_NORMAL_SIZE)
-          chunks.push(encodeText(`  ${prefix} ${en}\n`))
+          if (en !== zh) chunks.push(encodeText(`  ${prefix} ${en}\n`))
         })
       }
     })

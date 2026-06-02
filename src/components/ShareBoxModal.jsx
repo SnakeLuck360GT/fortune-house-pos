@@ -1,14 +1,11 @@
 import { useState } from 'react'
 
 const DRINKS = [
-  { id: 'coke',    nameEn: 'Coca-Cola',    nameZh: '可口可乐' },
-  { id: 'diet',    nameEn: 'Diet Coke',    nameZh: '健怡可乐' },
-  { id: 'sprite',  nameEn: 'Sprite',       nameZh: '雪碧' },
-  { id: 'fanta',   nameEn: 'Fanta Orange', nameZh: '芬达橙' },
-  { id: 'lemon',   nameEn: 'Lemonade',     nameZh: '柠檬苏打' },
-  { id: 'water',   nameEn: 'Water',        nameZh: '矿泉水' },
-  { id: 'irn',     nameEn: 'Irn Bru',      nameZh: '铁锈布鲁' },
-  { id: 'redbull', nameEn: 'Red Bull',     nameZh: '红牛' },
+  { id: 'coke',  nameEn: 'Coca-Cola'    },
+  { id: 'diet',  nameEn: 'Diet Coke'    },
+  { id: 'fanta', nameEn: 'Fanta Orange' },
+  { id: 'lemon', nameEn: 'Lemonade'     },
+  { id: 'water', nameEn: 'Water'        },
 ]
 
 // Tally of selections, allowing duplicates (e.g. 2x Coke)
@@ -34,12 +31,9 @@ export default function ShareBoxModal({ onConfirm, onCancel }) {
   function handleConfirm() {
     const drinks = selected.map(id => {
       const d = DRINKS.find(d => d.id === id)
-      return d ? d.nameZh : id
+      return d ? d.nameEn : id
     })
-    // Format: "饮料: 可口可乐 + 雪碧"
-    const note = drinks.length > 0
-      ? `饮料: ${drinks.join(' + ')}`
-      : ''
+    const note = drinks.join(', ')
     onConfirm(note)
   }
 
@@ -62,7 +56,6 @@ export default function ShareBoxModal({ onConfirm, onCancel }) {
                 onClick={() => !maxed && toggleDrink(drink.id)}
                 disabled={maxed}
               >
-                <span className="sharebox-drink__zh">{drink.nameZh}</span>
                 <span className="sharebox-drink__en">{drink.nameEn}</span>
                 {count > 0 && (
                   <span className="sharebox-drink__count">×{count}</span>

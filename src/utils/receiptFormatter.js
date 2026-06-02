@@ -68,7 +68,7 @@ export function buildReceiptLines({ items, total, tableNumber, discount, deliver
     if (item.note) {
       parseNoteLines(item.note).forEach(({ prefix, zh, en }) => {
         lines.push({ type: 'note-zh', text: `${prefix} ${zh}` })
-        lines.push({ type: 'note-en', text: `${prefix} ${en}` })
+        if (en !== zh) lines.push({ type: 'note-en', text: `${prefix} ${en}` })
       })
     }
   })

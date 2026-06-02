@@ -156,18 +156,20 @@ export default function OrderPanel({
       <div className="till-footer">
         {items.length > 0 && (
           <div className="till-extras">
-            <div className="till-extra-row">
-              <label htmlFor="delivery-input">🛵 Delivery fee</label>
-              <input
-                id="delivery-input"
-                type="number"
-                min="0"
-                step="0.50"
-                value={deliveryFee || ''}
-                onChange={e => onSetDeliveryFee(e.target.value)}
-                placeholder="0.00"
-              />
-            </div>
+            {orderMode === 'delivery' && (
+              <div className="till-extra-row">
+                <label htmlFor="delivery-input">🛵 Delivery fee</label>
+                <input
+                  id="delivery-input"
+                  type="number"
+                  min="0"
+                  step="0.50"
+                  value={deliveryFee || ''}
+                  onChange={e => onSetDeliveryFee(e.target.value)}
+                  placeholder="0.00"
+                />
+              </div>
+            )}
             <div className="till-extra-row">
               <label htmlFor="discount-input">{t.discount}</label>
               <input

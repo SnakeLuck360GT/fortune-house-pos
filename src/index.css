@@ -915,7 +915,7 @@ input::placeholder {
 
 /* Till footer */
 .till-footer {
-  padding: 12px 14px;
+  padding: 8px 12px;
   border-top: 1px solid var(--border-visible);
   background: var(--bg-panel);
 }
@@ -925,18 +925,18 @@ input::placeholder {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 0;
+  padding: 6px 0;
   border-top: 1px solid var(--border-visible);
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .till-total-label {
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 700;
 }
 
 .till-total-amount {
-  font-size: 28px;
+  font-size: 22px;
   font-weight: 900;
   color: var(--accent-gold);
 }
@@ -944,17 +944,17 @@ input::placeholder {
 .till-btns {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .till-btn {
-  padding: 16px;
+  padding: 10px 16px;
   border-radius: var(--radius);
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 700;
   text-align: center;
   transition: background var(--transition), transform var(--transition);
-  min-height: 54px;
+  min-height: 42px;
 }
 
 .till-btn:active { transform: scale(0.98); }
@@ -1663,14 +1663,17 @@ mark {
 
 /* separator lines */
 .rp-sep {
-  overflow: hidden;
-  white-space: nowrap;
-  font-size: 12px;
-  line-height: 1.4;
-  letter-spacing: 0;
+  display: block;
+  width: 100%;
+  border: none;
+  margin: 2px 0;
 }
-.rp-sep--heavy::after { content: '================================'; }
-.rp-sep--light::after { content: '--------------------------------'; }
+.rp-sep--heavy {
+  border-top: 2px solid #333;
+}
+.rp-sep--light {
+  border-top: 1px solid #ccc;
+}
 
 .rp-blank { height: 8px; }
 
@@ -1738,8 +1741,9 @@ mark {
 .rp-subtotal {
   display: flex;
   justify-content: space-between;
-  font-size: 12px;
-  color: #555;
+  font-size: 10px;
+  color: #777;
+  padding: 1px 0;
 }
 
 .rp-total {

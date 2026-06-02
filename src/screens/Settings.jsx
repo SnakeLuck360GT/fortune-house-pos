@@ -14,14 +14,17 @@ export default function Settings({ onNavigate, settings, onSaveSettings, lang, s
   const [tableNumber, setTableNumber] = useState(settings.tableNumber || '')
   // displayLang controls menu item cards only (en | zh | both)
   const [displayLang, setDisplayLang] = useState(settings.displayLang || 'both')
-  const [status,      setStatus]      = useState(null)
-  const [showPreview, setShowPreview] = useState(false)
-  const [sending,     setSending]     = useState(false)
+  const [showPreview, setShowPreview]  = useState(false)
+  const [sending,     setSending]      = useState(false)
 
-  function save() {
-    onSaveSettings({ printerUrl, tableNumber, displayLang })
-    setStatus({ msg: t.saveSettings, type: 'success' })
-    setTimeout(() => setStatus(null), 2500)
+  function updatePrinterUrl(val) {
+    setPrinterUrl(val)
+    onSaveSettings({ printerUrl: val, tableNumber, displayLang })
+  }
+
+  function updateTableNumber(val) {
+    setTableNumber(val)
+    onSaveSettings({ printerUrl, tableNumber: val, displayLang })
   }
 
   async function testPrint() {
@@ -104,9 +107,6 @@ export default function Settings({ onNavigate, settings, onSaveSettings, lang, s
                 </button>
               ))}
             </div>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>
-              ✓ Saves instantly
-            </div>
           </div>
         </div>
 
@@ -144,7 +144,7 @@ export default function Settings({ onNavigate, settings, onSaveSettings, lang, s
             <input
               type="url"
               value={printerUrl}
-              onChange={e => setPrinterUrl(e.target.value)}
+              onChange={e => updatePrinterUrl(e.target.value)}
               placeholder={t.printerUrlHint}
             />
           </div>
@@ -166,21 +166,15 @@ export default function Settings({ onNavigate, settings, onSaveSettings, lang, s
             <input
               type="text"
               value={tableNumber}
-              onChange={e => setTableNumber(e.target.value)}
+              onChange={e => updateTableNumber(e.target.value)}
               placeholder={t.tableNumberHint}
             />
           </div>
         </div>
 
-        <button className="settings-btn settings-btn--gold" onClick={save}>
-          Save Settings
-        </button>
-
-        {status && (
-          <div className={`settings-status settings-status--${status.type}`} style={{ marginTop: 12 }}>
-            {status.msg}
-          </div>
-        )}
+        <div style={{ fontSize: 12, color: 'var(--text-muted)', textAlign: 'center', padding: '8px 0' }}>
+          All settings save automatically
+        </div>
       </div>
     </div>
   )
