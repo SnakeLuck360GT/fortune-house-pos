@@ -29,7 +29,10 @@ export const handler = async (event) => {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'Invalid JSON' }) }
   }
 
-  const { orderId, items, total, discount, tableNumber, timestamp } = body
+  const {
+    orderId, items, total, discount, deliveryFee, tableNumber, timestamp,
+    type, floatSummary, orderMode, deliveryInfo, lang,
+  } = body
 
   if (!items || !Array.isArray(items) || items.length === 0) {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'No items provided' }) }
@@ -39,11 +42,17 @@ export const handler = async (event) => {
   const job = {
     jobId,
     orderId: orderId || jobId,
+    type: type || 'order',
     items,
     total: Number(total) || 0,
     discount: Number(discount) || 0,
+    deliveryFee: Number(deliveryFee) || 0,
     tableNumber: tableNumber || '',
     timestamp: timestamp || Date.now(),
+    orderMode: orderMode || 'takeaway',
+    deliveryInfo: deliveryInfo || null,
+    floatSummary: floatSummary || null,
+    lang: lang || 'en',
     status: 'pending',
     createdAt: Date.now(),
     error: null,
