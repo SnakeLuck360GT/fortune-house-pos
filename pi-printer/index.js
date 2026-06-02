@@ -43,6 +43,10 @@ const CMD_DOUBLE_SIZE   = Buffer.from([0x1b, 0x21, 0x30])  // double width + hei
 const CMD_NORMAL_SIZE   = Buffer.from([0x1b, 0x21, 0x00])
 const CMD_BOLD_ON       = Buffer.from([0x1b, 0x45, 0x01])
 const CMD_BOLD_OFF      = Buffer.from([0x1b, 0x45, 0x00])
+const CMD_INVERT_ON     = Buffer.from([0x1d, 0x42, 0x01])  // white on black
+const CMD_INVERT_OFF    = Buffer.from([0x1d, 0x42, 0x00])
+const CMD_UNDERLINE_ON  = Buffer.from([0x1b, 0x2d, 0x01])
+const CMD_UNDERLINE_OFF = Buffer.from([0x1b, 0x2d, 0x00])
 const CMD_CUT           = Buffer.from([0x1d, 0x56, 0x41, 0x00])  // partial cut
 const CMD_LF            = Buffer.from([0x0a])
 
@@ -233,57 +237,58 @@ function buildFloatBuffers(job) {
   const chunks = []
   chunks.push(CMD_INIT, CMD_ALIGN_CENTER)
 
-  chunks.push(CMD_BOLD_ON, CMD_DOUBLE_SIZE)
-  chunks.push(encodeText('Fortune House\n'))
+  if (LOGO_BUFFER) chunks.push(LOGO_BUFFER)
+
+  // ── Dark header (inverted): restaurant name + date ──
+  chunks.push(CMD_INVERT_ON, CMD_BOLD_ON, CMD_DOUBLE_SIZE)
+  chunks.push(encodeText(center('Fortune House', LINE_WIDTH * 2) + '\n'))
   chunks.push(CMD_NORMAL_SIZE)
   chunks.push(CMD_DOUBLE_SIZE)
-  chunks.push(encodeText('福运楼\n'))
+  chunks.push(encodeText(center('福运楼', LINE_WIDTH * 2) + '\n'))
   chunks.push(CMD_NORMAL_SIZE, CMD_BOLD_OFF)
+  chunks.push(encodeText(center(`${date}  ${timeStr}`, LINE_WIDTH) + '\n'))
+  chunks.push(CMD_INVERT_OFF)
 
-  chunks.push(encodeText(`${date}  ${timeStr}\n`))
-  chunks.push(encodeText('================================\n'))
-  chunks.push(CMD_BOLD_ON, CMD_DOUBLE_SIZE)
-  chunks.push(encodeText('DAILY SUMMARY\n'))
-  chunks.push(encodeText('日结报告\n'))
+  // ── Title band (inverted): DAILY SUMMARY ──
+  chunks.push(CMD_INVERT_ON, CMD_BOLD_ON, CMD_DOUBLE_SIZE)
+  chunks.push(encodeText(center('DAILY SUMMARY', LINE_WIDTH * 2) + '\n'))
+  chunks.push(CMD_NORMAL_SIZE)
+  chunks.push(CMD_DOUBLE_SIZE)
+  chunks.push(encodeText(center('日结报告', LINE_WIDTH * 2) + '\n'))
   chunks.push(CMD_NORMAL_SIZE, CMD_BOLD_OFF)
-  chunks.push(encodeText('================================\n\n'))
+  chunks.push(CMD_INVERT_OFF)
+  chunks.push(lf(1))
 
-  // Takeaway / delivery counts
-  chunks.push(CMD_ALIGN_LEFT)
-  chunks.push(CMD_BOLD_ON)
-  chunks.push(encodeText(pad('🛍 TAKEAWAY:', 20) + `${takeaways.length} orders\n`))
-  chunks.push(encodeText(pad('🛵 DELIVERY:', 20) + `${deliveries.length} orders\n`))
+  // ── Count + subtotal rows ──
+  chunks.push(CMD_ALIGN_LEFT, CMD_BOLD_ON)
+  const taTotal  = formatPrice(takeawayTotal)
+  const delTotal = formatPrice(deliveryTotal)
+  chunks.push(encodeText(pad(`TAKEAWAY  ${takeaways.length} orders`, LINE_WIDTH - taTotal.length)  + taTotal  + '\n'))
+  chunks.push(encodeText(pad(`DELIVERY  ${deliveries.length} orders`, LINE_WIDTH - delTotal.length) + delTotal + '\n'))
   chunks.push(CMD_BOLD_OFF)
   chunks.push(encodeText('--------------------------------\n'))
 
-  // Individual orders
+  // ── Individual orders ──
   allOrders.forEach(j => {
-    const t = new Date(j.timestamp).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
-    const mode = j.orderMode === 'delivery' ? 'DEL' : 'T/A'
+    const t    = new Date(j.timestamp).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+    const mode = j.orderMode === 'delivery' ? '[DEL]' : '[T/A]'
     const tot  = formatPrice(Number(j.total))
-    const left = pad(`${t}  ${mode}`, LINE_WIDTH - tot.length)
-    chunks.push(encodeText(left + tot + '\n'))
-
+    chunks.push(CMD_BOLD_ON)
+    chunks.push(encodeText(pad(`${t}  ${mode}`, LINE_WIDTH - tot.length) + tot + '\n'))
+    chunks.push(CMD_BOLD_OFF)
     const names = (j.items || []).slice(0, 3).map(i => i.nameEn).join(', ')
-    if (names) chunks.push(encodeText(`  ${names.slice(0, 28)}\n`))
+    if (names) chunks.push(encodeText(`  ${names.slice(0, LINE_WIDTH - 2)}\n`))
   })
 
-  chunks.push(encodeText('--------------------------------\n'))
-
-  // Subtotals
-  const tStr = formatPrice(takeawayTotal)
-  const dStr = formatPrice(deliveryTotal)
-  chunks.push(encodeText(pad('Takeaway:', LINE_WIDTH - tStr.length) + tStr + '\n'))
-  chunks.push(encodeText(pad('Delivery:', LINE_WIDTH - dStr.length) + dStr + '\n'))
+  // ── Grand total (inverted) ──
+  chunks.push(CMD_ALIGN_CENTER)
   chunks.push(encodeText('================================\n'))
-
-  // Grand total
-  chunks.push(CMD_BOLD_ON, CMD_DOUBLE_SIZE)
+  chunks.push(CMD_INVERT_ON, CMD_BOLD_ON, CMD_DOUBLE_SIZE)
   const gStr = formatPrice(grandTotal)
-  chunks.push(encodeText(pad('TOTAL:', 12) + gStr + '\n'))
+  chunks.push(encodeText(center(`TOTAL  ${gStr}`, LINE_WIDTH * 2) + '\n'))
   chunks.push(CMD_NORMAL_SIZE, CMD_BOLD_OFF)
+  chunks.push(CMD_INVERT_OFF)
 
-  chunks.push(encodeText('================================\n'))
   chunks.push(lf(4), CMD_CUT)
 
   return Buffer.concat(chunks)

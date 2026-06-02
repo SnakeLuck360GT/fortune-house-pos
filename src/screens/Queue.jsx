@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import HomeButton from '../components/HomeButton.jsx'
 import ReceiptPreview from '../components/ReceiptPreview.jsx'
 import { formatPrice } from '../utils/receiptFormatter.js'
+import PinModal from '../components/PinModal.jsx'
 
 function statusBadge(status) {
   return <span className={`queue-badge queue-badge--${status}`}>{status}</span>
@@ -160,6 +161,9 @@ export default function Queue({ onNavigate, settings, t }) {
   const [error, setError]             = useState(null)
   const [lastRefresh, setLastRefresh] = useState(null)
   const [selectedJob, setSelectedJob] = useState(null)
+  const [showPin,     setShowPin]     = useState(false)
+
+  const pin = settings?.pin || '1234'
 
   const apiBase = settings?.printerUrl || ''
 
@@ -218,7 +222,6 @@ export default function Queue({ onNavigate, settings, t }) {
   }
 
   async function clearPending() {
-    if (!window.confirm(`Delete ${pending.length} pending job${pending.length !== 1 ? 's' : ''}?`)) return
     await Promise.all(
       pending.map(j =>
         fetch(`${apiBase}/api/complete`, {
@@ -250,7 +253,7 @@ export default function Queue({ onNavigate, settings, t }) {
         </div>
         <div className="queue-actions">
           {pending.length > 0 && (
-            <button className="queue-btn queue-btn--danger" onClick={clearPending}>
+            <button className="queue-btn queue-btn--danger" onClick={() => setShowPin(true)}>
               🗑 Delete Pending ({pending.length})
             </button>
           )}
@@ -294,6 +297,15 @@ export default function Queue({ onNavigate, settings, t }) {
 
       {selectedJob && (
         <JobPreviewModal job={selectedJob} onClose={() => setSelectedJob(null)} />
+      )}
+
+      {showPin && (
+        <PinModal
+          prompt="Enter PIN to delete pending jobs"
+          correctPin={pin}
+          onSuccess={() => { setShowPin(false); clearPending() }}
+          onCancel={() => setShowPin(false)}
+        />
       )}
     </div>
   )

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { RESTAURANT_NAME, RESTAURANT_NAME_ZH } from '../data/menu.js'
 import { formatPrice } from '../utils/receiptFormatter.js'
+import PinModal from '../components/PinModal.jsx'
 
 function AboutModal({ onClose, t }) {
   return (
@@ -93,13 +94,15 @@ function FloatModal({ summary, onPrint, onClose, printing }) {
 }
 
 export default function MainMenu({ onNavigate, t, settings }) {
-  const [showAbout,   setShowAbout]   = useState(false)
-  const [floatData,   setFloatData]   = useState(null)
+  const [showAbout,    setShowAbout]    = useState(false)
+  const [floatData,    setFloatData]    = useState(null)
   const [loadingFloat, setLoadingFloat] = useState(false)
-  const [floatError,  setFloatError]  = useState(null)
-  const [printing,    setPrinting]    = useState(false)
+  const [floatError,   setFloatError]   = useState(null)
+  const [printing,     setPrinting]     = useState(false)
+  const [showPin,      setShowPin]      = useState(false)
 
   const apiBase = settings?.printerUrl?.trim() || ''
+  const pin     = settings?.pin || '1234'
 
   async function handleFloatClick() {
     if (!apiBase) { setFloatError('Set Printer URL in Settings first.'); return }
@@ -192,7 +195,7 @@ export default function MainMenu({ onNavigate, t, settings }) {
       <div className="main-menu__secondary">
         <button
           className="main-menu__sec-btn"
-          onClick={handleFloatClick}
+          onClick={() => setShowPin(true)}
           disabled={loadingFloat}
         >
           {loadingFloat ? '⏳' : '📊'} Today's Float
@@ -224,6 +227,15 @@ export default function MainMenu({ onNavigate, t, settings }) {
       )}
 
       {showAbout && <AboutModal onClose={() => setShowAbout(false)} t={t} />}
+
+      {showPin && (
+        <PinModal
+          prompt="Enter PIN to view float"
+          correctPin={pin}
+          onSuccess={() => { setShowPin(false); handleFloatClick() }}
+          onCancel={() => setShowPin(false)}
+        />
+      )}
     </div>
   )
 }
