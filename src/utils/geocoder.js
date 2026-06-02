@@ -33,10 +33,10 @@ export async function fetchPostcodeInfo(rawPostcode) {
   let road = ''
 
   try {
-    const revRes = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=17&addressdetails=1`,
-      { headers: { 'User-Agent': 'FortuneHousePOS/1.0', 'Accept-Language': 'en-GB' }, signal: timeoutSignal(4000) }
-    )
+    const geocodeUrl = window.location.hostname === 'localhost'
+      ? `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=17&addressdetails=1&accept-language=en-GB`
+      : `/api/geocode?lat=${lat}&lon=${lon}`
+    const revRes = await fetch(geocodeUrl, { signal: timeoutSignal(4000) })
     if (revRes.ok) {
       const rev = await revRes.json()
       road = rev.address?.road || rev.address?.pedestrian || rev.address?.footway || ''
