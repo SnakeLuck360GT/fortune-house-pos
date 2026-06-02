@@ -1281,6 +1281,18 @@ mark {
   border-color: var(--danger);
 }
 
+.queue-btn--danger {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  font-size: 13px;
+}
+
+.queue-btn--danger:hover {
+  background: var(--danger);
+  color: #fff;
+}
+
 .queue-list {
   flex: 1;
   overflow-y: auto;
@@ -1518,6 +1530,68 @@ mark {
   letter-spacing: 0.06em;
   color: var(--text-muted);
   margin-bottom: 6px;
+}
+
+/* ─── Float / daily summary modal ───────────────────────────────────────── */
+.float-modal {
+  max-width: 480px !important;
+  width: 100% !important;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.float-totals {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.float-total-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-visible);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.float-total-card__icon  { font-size: 18px; }
+.float-total-card__count { font-size: 12px; color: var(--text-muted); }
+.float-total-card__amount { font-size: 17px; font-weight: 700; color: var(--accent-gold); }
+
+.float-order-list {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 10px;
+  max-height: 280px;
+}
+
+.float-order-row {
+  display: grid;
+  grid-template-columns: 40px 22px 1fr auto;
+  gap: 6px;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 13px;
+}
+
+.float-order-row__time  { color: var(--text-muted); font-size: 12px; }
+.float-order-row__items { color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.float-order-row__total { font-weight: 600; white-space: nowrap; }
+
+.float-grand-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0 4px;
+  border-top: 2px solid var(--border-visible);
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--accent-gold);
 }
 
 .sharebox-drinks {

@@ -83,12 +83,31 @@ function getItemName(item, lang) {
   return item.nameEn
 }
 
+// ─── Note helpers ────────────────────────────────────────────────────────────
+const ZH_TO_EN = {
+  '不加辣': 'No Chilli',    '不加蒜': 'No Garlic',      '不加洋葱': 'No Onion',
+  '不加葱': 'No Spring Onion', '不加味精': 'No MSG',    '不加盐': 'No Salt',
+  '不加蛋': 'No Egg',       '不加猪肉': 'No Pork',      '多加酱': 'Extra Sauce',
+  '加辣':   'Extra Spicy',  '多加饭': 'Extra Rice',      '多加面': 'Extra Noodles',
+  '加脆':   'Extra Crispy', '全熟': 'Well Done',
+}
+
+function parseNoteLines(note) {
+  return note.split(/[,，]\s*/).map(s => s.trim()).filter(Boolean).map(zh => ({
+    prefix: zh.startsWith('不') ? '-' : '+',
+    zh,
+    en: ZH_TO_EN[zh] || zh,
+  }))
+}
+
 // ─── Receipt builder ─────────────────────────────────────────────────────────
 function buildReceiptBuffers(job) {
-  const { items, total, tableNumber, discount, orderId, timestamp, lang = 'en' } = job
+  const { items, total, tableNumber, discount, deliveryFee, orderId, timestamp,
+          orderMode, deliveryInfo, lang = 'en' } = job
   const ts = timestamp ? new Date(timestamp) : new Date()
   const dateStr = ts.toLocaleDateString('en-GB')
   const timeStr = ts.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+  const isDelivery = orderMode === 'delivery'
 
   const chunks = []
 
@@ -101,12 +120,25 @@ function buildReceiptBuffers(job) {
   chunks.push(encodeText('Fortune House\n'))
   chunks.push(CMD_NORMAL_SIZE)
   chunks.push(CMD_DOUBLE_SIZE)
-  chunks.push(encodeText('福运楼\n'))  // 福运楼
+  chunks.push(encodeText('福运楼\n'))
   chunks.push(CMD_NORMAL_SIZE, CMD_BOLD_OFF)
 
   chunks.push(encodeText(`${dateStr}  ${timeStr}\n`))
   if (tableNumber) chunks.push(encodeText(`Table: ${tableNumber}\n`))
   if (orderId)     chunks.push(encodeText(`Order: ${orderId}\n`))
+
+  // Order type banner
+  chunks.push(CMD_BOLD_ON, CMD_DOUBLE_SIZE)
+  chunks.push(encodeText(isDelivery ? 'DELIVERY 外送\n' : 'TAKEAWAY 外带\n'))
+  chunks.push(CMD_NORMAL_SIZE, CMD_BOLD_OFF)
+
+  // Delivery customer info
+  if (isDelivery && deliveryInfo) {
+    if (deliveryInfo.customerName) chunks.push(encodeText(`${deliveryInfo.customerName}\n`))
+    if (deliveryInfo.phone)        chunks.push(encodeText(`${deliveryInfo.phone}\n`))
+    if (deliveryInfo.address)      chunks.push(encodeText(`${deliveryInfo.address}\n`))
+    if (deliveryInfo.driveMinutes) chunks.push(encodeText(`~${deliveryInfo.driveMinutes} min\n`))
+  }
 
   chunks.push(encodeText('================================\n\n'))
   chunks.push(CMD_ALIGN_LEFT)
@@ -130,13 +162,11 @@ function buildReceiptBuffers(job) {
       const priceStr = formatPrice(item.price * item.quantity)
 
       if (lang === 'zh' && item.nameZh) {
-        // Chinese name at double size
         chunks.push(CMD_DOUBLE_SIZE)
         const left = pad(name.slice(0, 10) + '  x' + item.quantity, 14)
         chunks.push(encodeText(left + '  ' + priceStr + '\n'))
         chunks.push(CMD_NORMAL_SIZE)
       } else {
-        // English name at normal+bold
         chunks.push(CMD_BOLD_ON)
         const left = pad(`${name}  x${item.quantity}`, LINE_WIDTH - priceStr.length)
         chunks.push(encodeText(left + priceStr + '\n'))
@@ -144,9 +174,12 @@ function buildReceiptBuffers(job) {
       }
 
       if (item.note) {
-        chunks.push(CMD_DOUBLE_SIZE)
-        chunks.push(encodeText(`${item.note}\n`))
-        chunks.push(CMD_NORMAL_SIZE)
+        parseNoteLines(item.note).forEach(({ prefix, zh, en }) => {
+          chunks.push(CMD_DOUBLE_SIZE)
+          chunks.push(encodeText(`${prefix} ${zh}\n`))
+          chunks.push(CMD_NORMAL_SIZE)
+          chunks.push(encodeText(`  ${prefix} ${en}\n`))
+        })
       }
     })
 
@@ -155,12 +188,20 @@ function buildReceiptBuffers(job) {
 
   chunks.push(encodeText('--------------------------------\n'))
 
-  // Discount line
-  if (discount && Number(discount) > 0) {
+  // Subtotal / delivery / discount lines
+  const hasExtras = (discount && Number(discount) > 0) || (deliveryFee && Number(deliveryFee) > 0)
+  if (hasExtras) {
     const subtotal = (items || []).reduce((s, i) => s + i.price * i.quantity, 0)
     chunks.push(CMD_BOLD_ON)
-    chunks.push(encodeText(pad('SUBTOTAL:', 20) + formatPrice(subtotal) + '\n'))
-    chunks.push(encodeText(pad('DISCOUNT:', 20) + `-${formatPrice(discount)}` + '\n'))
+    chunks.push(encodeText(pad('SUBTOTAL:', LINE_WIDTH - formatPrice(subtotal).length) + formatPrice(subtotal) + '\n'))
+    if (deliveryFee && Number(deliveryFee) > 0) {
+      const d = formatPrice(Number(deliveryFee))
+      chunks.push(encodeText(pad('DELIVERY:', LINE_WIDTH - d.length) + d + '\n'))
+    }
+    if (discount && Number(discount) > 0) {
+      const disc = `-${formatPrice(Number(discount))}`
+      chunks.push(encodeText(pad('DISCOUNT:', LINE_WIDTH - disc.length) + disc + '\n'))
+    }
     chunks.push(CMD_BOLD_OFF)
   }
 
@@ -172,9 +213,7 @@ function buildReceiptBuffers(job) {
 
   chunks.push(encodeText('================================\n'))
   chunks.push(CMD_ALIGN_CENTER)
-  chunks.push(encodeText('** Thank you / '))
-  chunks.push(encodeText('谢谢惠顾'))  // 谢谢惠顾
-  chunks.push(encodeText(' **\n'))
+  chunks.push(encodeText('** Thank you / 谢谢惠顾 **\n'))
   chunks.push(encodeText('================================\n'))
 
   chunks.push(lf(4))
@@ -183,9 +222,76 @@ function buildReceiptBuffers(job) {
   return Buffer.concat(chunks)
 }
 
+// ─── Float / daily summary receipt ───────────────────────────────────────────
+function buildFloatBuffers(job) {
+  const { floatSummary, timestamp } = job
+  const { date, takeaways, deliveries, takeawayTotal, deliveryTotal, grandTotal } = floatSummary
+  const ts = timestamp ? new Date(timestamp) : new Date()
+  const timeStr = ts.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+  const allOrders = [...takeaways, ...deliveries].sort((a, b) => a.timestamp - b.timestamp)
+
+  const chunks = []
+  chunks.push(CMD_INIT, CMD_ALIGN_CENTER)
+
+  chunks.push(CMD_BOLD_ON, CMD_DOUBLE_SIZE)
+  chunks.push(encodeText('Fortune House\n'))
+  chunks.push(CMD_NORMAL_SIZE)
+  chunks.push(CMD_DOUBLE_SIZE)
+  chunks.push(encodeText('福运楼\n'))
+  chunks.push(CMD_NORMAL_SIZE, CMD_BOLD_OFF)
+
+  chunks.push(encodeText(`${date}  ${timeStr}\n`))
+  chunks.push(encodeText('================================\n'))
+  chunks.push(CMD_BOLD_ON, CMD_DOUBLE_SIZE)
+  chunks.push(encodeText('DAILY SUMMARY\n'))
+  chunks.push(encodeText('日结报告\n'))
+  chunks.push(CMD_NORMAL_SIZE, CMD_BOLD_OFF)
+  chunks.push(encodeText('================================\n\n'))
+
+  // Takeaway / delivery counts
+  chunks.push(CMD_ALIGN_LEFT)
+  chunks.push(CMD_BOLD_ON)
+  chunks.push(encodeText(pad('🛍 TAKEAWAY:', 20) + `${takeaways.length} orders\n`))
+  chunks.push(encodeText(pad('🛵 DELIVERY:', 20) + `${deliveries.length} orders\n`))
+  chunks.push(CMD_BOLD_OFF)
+  chunks.push(encodeText('--------------------------------\n'))
+
+  // Individual orders
+  allOrders.forEach(j => {
+    const t = new Date(j.timestamp).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+    const mode = j.orderMode === 'delivery' ? 'DEL' : 'T/A'
+    const tot  = formatPrice(Number(j.total))
+    const left = pad(`${t}  ${mode}`, LINE_WIDTH - tot.length)
+    chunks.push(encodeText(left + tot + '\n'))
+
+    const names = (j.items || []).slice(0, 3).map(i => i.nameEn).join(', ')
+    if (names) chunks.push(encodeText(`  ${names.slice(0, 28)}\n`))
+  })
+
+  chunks.push(encodeText('--------------------------------\n'))
+
+  // Subtotals
+  const tStr = formatPrice(takeawayTotal)
+  const dStr = formatPrice(deliveryTotal)
+  chunks.push(encodeText(pad('Takeaway:', LINE_WIDTH - tStr.length) + tStr + '\n'))
+  chunks.push(encodeText(pad('Delivery:', LINE_WIDTH - dStr.length) + dStr + '\n'))
+  chunks.push(encodeText('================================\n'))
+
+  // Grand total
+  chunks.push(CMD_BOLD_ON, CMD_DOUBLE_SIZE)
+  const gStr = formatPrice(grandTotal)
+  chunks.push(encodeText(pad('TOTAL:', 12) + gStr + '\n'))
+  chunks.push(CMD_NORMAL_SIZE, CMD_BOLD_OFF)
+
+  chunks.push(encodeText('================================\n'))
+  chunks.push(lf(4), CMD_CUT)
+
+  return Buffer.concat(chunks)
+}
+
 // ─── Print job ───────────────────────────────────────────────────────────────
 async function printJob(job) {
-  console.log(`[PRINT] Printing job ${job.jobId} (lang: ${job.lang || 'en'})…`)
+  console.log(`[PRINT] Printing job ${job.jobId} (type: ${job.type || 'order'})…`)
 
   const printer = createPrinter()
 
@@ -194,7 +300,9 @@ async function printJob(job) {
     throw new Error(`Printer not connected at ${PRINTER_IFACE}`)
   }
 
-  const buffer = buildReceiptBuffers({ ...job, lang: job.lang || 'en' })
+  const buffer = job.type === 'float'
+    ? buildFloatBuffers(job)
+    : buildReceiptBuffers({ ...job, lang: job.lang || 'en' })
 
   // Use raw buffer mode — write directly to the printer interface
   const fs = require('fs')

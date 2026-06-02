@@ -47,7 +47,7 @@ export default function App() {
   return (
     <div className="app">
       {screen === 'menu' && (
-        <MainMenu onNavigate={navigate} t={t} />
+        <MainMenu onNavigate={navigate} t={t} settings={settings} />
       )}
       {screen === 'delivery' && (
         <DeliveryDetails

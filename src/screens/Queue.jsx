@@ -112,6 +112,20 @@ export default function Queue({ onNavigate, settings, t }) {
     fetchJobs()
   }
 
+  async function clearPending() {
+    if (!window.confirm(`Delete ${pending.length} pending job${pending.length !== 1 ? 's' : ''}?`)) return
+    await Promise.all(
+      pending.map(j =>
+        fetch(`${apiBase}/api/complete`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jobId: j.jobId, delete: true }),
+        }).catch(() => {})
+      )
+    )
+    fetchJobs()
+  }
+
   const pending   = jobs.filter(j => j.status === 'pending')
   const printed   = jobs.filter(j => j.status === 'printed')
   const failed    = jobs.filter(j => j.status === 'failed')
@@ -130,6 +144,11 @@ export default function Queue({ onNavigate, settings, t }) {
           )}
         </div>
         <div className="queue-actions">
+          {pending.length > 0 && (
+            <button className="queue-btn queue-btn--danger" onClick={clearPending}>
+              🗑 Delete Pending ({pending.length})
+            </button>
+          )}
           {printed.length > 0 && (
             <button className="queue-btn queue-btn--clear" onClick={clearCompleted}>
               {t.clearCompleted}
