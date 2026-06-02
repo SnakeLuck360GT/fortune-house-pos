@@ -8,27 +8,27 @@
 
 [[redirects]]
   from = "/api/print"
-  to = "/.netlify/functions/api/print"
+  to = "/.netlify/functions/print"
   status = 200
 
 [[redirects]]
   from = "/api/jobs"
-  to = "/.netlify/functions/api/jobs"
+  to = "/.netlify/functions/jobs"
   status = 200
 
 [[redirects]]
   from = "/api/complete"
-  to = "/.netlify/functions/api/complete"
+  to = "/.netlify/functions/complete"
   status = 200
 
 [[redirects]]
   from = "/api/fail"
-  to = "/.netlify/functions/api/fail"
+  to = "/.netlify/functions/fail"
   status = 200
 
 [[redirects]]
   from = "/api/translate"
-  to = "/.netlify/functions/api/translate"
+  to = "/.netlify/functions/translate"
   status = 200
 
 [[redirects]]
