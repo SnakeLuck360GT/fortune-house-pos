@@ -23,6 +23,15 @@ export function formatPrice(p) {
   return `£${p.toFixed(2)}`
 }
 
+// Estimated ready (takeaway, +20 min) / delivery (+40–60 min) time for the receipt.
+function etaLines(ts, isDelivery) {
+  const fmt = d => d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+  const at  = mins => fmt(new Date(ts.getTime() + mins * 60000))
+  return isDelivery
+    ? [`Delivery ~${at(40)}-${at(60)}`, '约40-60分钟 / 40-60 mins']
+    : [`Ready ~${at(20)}`,              '约20分钟 / 20 mins']
+}
+
 // Split a comma-separated note into individual lines with +/- prefix and English label.
 // Chinese modifiers starting with 不 are "remove" (−), everything else is "add" (+).
 const ZH_TO_EN = Object.fromEntries(NOTE_OPTIONS.map(o => [o.zh, o.en]))
@@ -57,6 +66,7 @@ export function buildReceiptLines({ items, total, tableNumber, discount, deliver
     if (deliveryInfo.customerName) lines.push({ type: 'center', text: deliveryInfo.customerName })
     if (deliveryInfo.address)      lines.push({ type: 'center', text: deliveryInfo.address })
   }
+  etaLines(ts, isDelivery).forEach(text => lines.push({ type: 'eta', text }))
   lines.push({ type: 'sep-heavy' })
   lines.push({ type: 'blank' })
 
@@ -108,6 +118,7 @@ export function buildReceiptText({ items, total, tableNumber, discount, delivery
         case 'blank':       return ''
         case 'center':      return center(l.text, LINE_WIDTH)
         case 'order-type':  return center(l.text, LINE_WIDTH)
+        case 'eta':         return center(l.text, LINE_WIDTH)
         case 'zh':          return pad(l.text, LINE_WIDTH - l.price.length) + l.price
         case 'en':          return `  ${l.text}`
         case 'detail':      return `  ${l.text}`

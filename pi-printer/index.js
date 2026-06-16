@@ -87,6 +87,15 @@ function getItemName(item, lang) {
   return item.nameEn
 }
 
+// Estimated ready (takeaway, +20 min) / delivery (+40–60 min) time.
+function etaLines(ts, isDelivery) {
+  const fmt = d => d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+  const at  = mins => fmt(new Date(ts.getTime() + mins * 60000))
+  return isDelivery
+    ? [`Delivery ~${at(40)}-${at(60)}`, '约40-60分钟 / 40-60 mins']
+    : [`Ready ~${at(20)}`,              '约20分钟 / 20 mins']
+}
+
 // ─── Note helpers ────────────────────────────────────────────────────────────
 const ZH_TO_EN = {
   '不加辣': 'No Chilli',    '不加蒜': 'No Garlic',      '不加洋葱': 'No Onion',
@@ -143,6 +152,11 @@ function buildReceiptBuffers(job) {
     if (deliveryInfo.address)      chunks.push(encodeText(`${deliveryInfo.address}\n`))
     if (deliveryInfo.driveMinutes) chunks.push(encodeText(`~${deliveryInfo.driveMinutes} min\n`))
   }
+
+  // Estimated ready / delivery time
+  chunks.push(CMD_BOLD_ON)
+  etaLines(ts, isDelivery).forEach(line => chunks.push(encodeText(line + '\n')))
+  chunks.push(CMD_BOLD_OFF)
 
   chunks.push(encodeText('================================\n\n'))
   chunks.push(CMD_ALIGN_LEFT)

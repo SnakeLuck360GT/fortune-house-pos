@@ -15,6 +15,8 @@ export default function ReceiptPreview({ items, total, tableNumber, discount, de
             return <div key={i} className="rp-blank" />
           case 'center':
             return <div key={i} className="rp-center">{line.text}</div>
+          case 'eta':
+            return <div key={i} className="rp-eta">{line.text}</div>
           case 'order-type':
             return (
               <div key={i} className={`rp-order-type rp-order-type--${line.isDelivery ? 'delivery' : 'takeaway'}`}>

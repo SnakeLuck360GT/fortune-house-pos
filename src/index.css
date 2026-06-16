@@ -2607,3 +2607,11 @@ mark {
   line-height: 1.35;
 }
 .rp-detail-zh + .rp-detail-block { margin-top: 10px; }
+
+.rp-eta {
+  text-align: center;
+  font-weight: 700;
+  font-size: 13px;
+  color: #000;
+  line-height: 1.4;
+}
