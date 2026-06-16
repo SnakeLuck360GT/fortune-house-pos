@@ -39,7 +39,9 @@ function orderReducer(state, action) {
       return {
         ...state,
         items: state.items.map(i =>
-          i.id === action.id ? { ...i, note: action.note } : i
+          i.id === action.id
+            ? { ...i, note: action.note, notePrice: action.notePrice != null ? action.notePrice : (i.notePrice || 0) }
+            : i
         ),
       }
     case 'SPLIT_ITEM': {
@@ -75,14 +77,14 @@ export function useOrder() {
   const removeItem = useCallback((id) => dispatch({ type: 'REMOVE_ITEM', id }), [])
   const increment = useCallback((id) => dispatch({ type: 'INCREMENT', id }), [])
   const decrement = useCallback((id) => dispatch({ type: 'DECREMENT', id }), [])
-  const setNote = useCallback((id, note) => dispatch({ type: 'SET_NOTE', id, note }), [])
+  const setNote = useCallback((id, note, notePrice) => dispatch({ type: 'SET_NOTE', id, note, notePrice }), [])
   const splitItem = useCallback((id) => dispatch({ type: 'SPLIT_ITEM', id }), [])
   const setDiscount    = useCallback((d) => dispatch({ type: 'SET_DISCOUNT',     discount:    Number(d) || 0 }), [])
   const setDeliveryFee = useCallback((f) => dispatch({ type: 'SET_DELIVERY_FEE', fee:         Number(f) || 0 }), [])
   const clearOrder = useCallback(() => dispatch({ type: 'CLEAR' }), [])
 
   const subtotal = useMemo(
-    () => state.items.reduce((sum, i) => sum + i.price * i.quantity, 0),
+    () => state.items.reduce((sum, i) => sum + (i.price + (i.notePrice || 0)) * i.quantity, 0),
     [state.items]
   )
 

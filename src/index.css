@@ -1718,6 +1718,43 @@ mark {
   margin-bottom: 6px;
 }
 
+/* Custom free-text note + EN/中文 keyboard toggle + price */
+.note-kb { display: inline-flex; gap: 4px; }
+.note-kb__btn {
+  padding: 4px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  border: 1px solid var(--border-visible);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+.note-kb__btn--active {
+  background: var(--accent-gold);
+  border-color: var(--accent-gold);
+  color: #1a1a1a;
+}
+.note-custom { display: flex; gap: 8px; align-items: stretch; }
+.note-custom__text { flex: 1; padding: 12px; font-size: 16px; }
+.note-custom__price {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 104px;
+  padding: 0 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-visible);
+  border-radius: var(--radius-sm);
+}
+.note-custom__price-sign { color: var(--text-muted); font-weight: 700; }
+.note-custom__price input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 12px 0;
+  font-size: 16px;
+}
+
 /* ─── Float / daily summary modal ───────────────────────────────────────── */
 .float-modal {
   max-width: 480px !important;
@@ -2434,6 +2471,28 @@ mark {
 .so-opt:hover:not(:disabled) { background: var(--bg-hover); border-color: var(--border-bright); }
 .so-opt--selected { border-color: var(--accent-green) !important; background: rgba(22,163,74,0.12) !important; }
 .so-opt--disabled { opacity: 0.35; cursor: not-allowed; }
+.so-opt--confirming {
+  border-color: var(--accent-gold) !important;
+  background: rgba(245,158,11,0.14) !important;
+  animation: soPulse 600ms ease infinite alternate;
+}
+@keyframes soPulse {
+  from { box-shadow: 0 0 0 0 rgba(245,158,11,0.0); }
+  to   { box-shadow: 0 0 0 3px rgba(245,158,11,0.45); }
+}
+.so-opt__note {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-gold);
+  margin-top: 3px;
+}
+.so-opt__badge--fee {
+  background: var(--accent-gold);
+  color: #1a1a1a;
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-size: 12px;
+}
 .so-opt__zh  { font-size: 15px; font-weight: 700; }
 .so-opt__en  { font-size: 12px; color: var(--text-secondary); }
 .so-opt__tag { color: var(--accent-gold); }

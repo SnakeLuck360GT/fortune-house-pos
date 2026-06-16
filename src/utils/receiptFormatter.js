@@ -61,7 +61,7 @@ export function buildReceiptLines({ items, total, tableNumber, discount, deliver
   lines.push({ type: 'blank' })
 
   items.forEach(item => {
-    const price  = formatPrice(item.price * item.quantity)
+    const price  = formatPrice((item.price + (item.notePrice || 0)) * item.quantity)
     const zhName = item.nameZh || item.nameEn
     lines.push({ type: 'zh', text: zhName, price, quantity: item.quantity })
     lines.push({ type: 'en', text: `${item.nameEn}  ×${item.quantity}` })
@@ -82,7 +82,7 @@ export function buildReceiptLines({ items, total, tableNumber, discount, deliver
 
   const hasExtras = (discount && discount > 0) || (deliveryFee && deliveryFee > 0)
   if (hasExtras) {
-    const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0)
+    const subtotal = items.reduce((s, i) => s + (i.price + (i.notePrice || 0)) * i.quantity, 0)
     lines.push({ type: 'subtotal', label: 'Subtotal', price: formatPrice(subtotal) })
     if (deliveryFee && deliveryFee > 0)
       lines.push({ type: 'subtotal', label: 'Delivery', price: formatPrice(deliveryFee) })
@@ -152,7 +152,7 @@ export function buildEscposReceipt({ items, total, tableNumber, discount, delive
   chunks.push(CMD_LEFT)
 
   items.forEach(item => {
-    const price  = formatPrice(item.price * item.quantity)
+    const price  = formatPrice((item.price + (item.notePrice || 0)) * item.quantity)
     const zhName = item.nameZh || item.nameEn
     // Chinese name — double height, price on same line
     chunks.push(CMD_DOUBLE)
@@ -183,7 +183,7 @@ export function buildEscposReceipt({ items, total, tableNumber, discount, delive
   chunks.push(enc('--------------------------------\n'))
 
   if ((discount && Number(discount) > 0) || (deliveryFee && Number(deliveryFee) > 0)) {
-    const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0)
+    const subtotal = items.reduce((s, i) => s + (i.price + (i.notePrice || 0)) * i.quantity, 0)
     chunks.push(enc(pad('Subtotal:', LINE_WIDTH - formatPrice(subtotal).length) + formatPrice(subtotal) + '\n'))
     if (deliveryFee && Number(deliveryFee) > 0) {
       const del = formatPrice(deliveryFee)

@@ -60,7 +60,7 @@ function OrderItem({ item, onIncrement, onDecrement, onRemove, onSetNote, onSpli
             split
           </button>
         )}
-        <span className="order-item__line-total">{formatPrice(item.price * item.quantity)}</span>
+        <span className="order-item__line-total">{formatPrice((item.price + (item.notePrice || 0)) * item.quantity)}</span>
       </div>
 
       {Array.isArray(item.details) && item.details.length > 0 && (
@@ -74,7 +74,7 @@ function OrderItem({ item, onIncrement, onDecrement, onRemove, onSetNote, onSpli
       <div className="order-item__note-row">
         {item.note ? (
           <div className="order-item__note-display" onClick={() => setShowNoteModal(true)}>
-            {item.note}
+            {item.note}{item.notePrice > 0 ? ` · +${formatPrice(item.notePrice)}` : ''}
           </div>
         ) : (
           <button className="order-item__note-btn" onClick={() => setShowNoteModal(true)}>
@@ -87,7 +87,8 @@ function OrderItem({ item, onIncrement, onDecrement, onRemove, onSetNote, onSpli
         <NoteModal
           item={item}
           currentNote={item.note}
-          onConfirm={note => { onSetNote(item.id, note); setShowNoteModal(false) }}
+          currentNotePrice={item.notePrice}
+          onConfirm={(note, notePrice) => { onSetNote(item.id, note, notePrice); setShowNoteModal(false) }}
           onCancel={() => setShowNoteModal(false)}
         />
       )}

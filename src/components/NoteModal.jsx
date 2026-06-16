@@ -1,11 +1,20 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useLanguage } from '../hooks/useLanguage.js'
 import { NOTE_OPTIONS, getItemNotes } from '../data/noteOptions.js'
 
-function parseSelected(note) {
+const PRESET_ZH = new Set(NOTE_OPTIONS.map(o => o.zh))
+
+function noteParts(note) {
   if (!note) return []
-  const parts = note.split(/[,，]\s*/).map(s => s.trim()).filter(Boolean)
+  return note.split(/[,，]\s*/).map(s => s.trim()).filter(Boolean)
+}
+function parseSelected(note) {
+  const parts = noteParts(note)
   return NOTE_OPTIONS.filter(opt => parts.includes(opt.zh)).map(opt => opt.id)
+}
+// Anything in the note that isn't a known preset is the free-text custom note.
+function parseCustom(note) {
+  return noteParts(note).filter(p => !PRESET_ZH.has(p)).join(', ')
 }
 
 function NoteButton({ opt, isSelected, isZh, onToggle }) {
@@ -29,9 +38,13 @@ function NoteButton({ opt, isSelected, isZh, onToggle }) {
   )
 }
 
-export default function NoteModal({ item, currentNote, onConfirm, onCancel }) {
+export default function NoteModal({ item, currentNote, currentNotePrice, onConfirm, onCancel }) {
   const { lang, t } = useLanguage()
-  const [selected, setSelected] = useState(() => parseSelected(currentNote))
+  const [selected, setSelected]     = useState(() => parseSelected(currentNote))
+  const [customText, setCustomText] = useState(() => parseCustom(currentNote))
+  const [customPrice, setCustomPrice] = useState(() => (currentNotePrice ? String(currentNotePrice) : ''))
+  const [kbLang, setKbLang]         = useState('en')
+  const inputRef = useRef(null)
   const isZh = lang === 'zh'
 
   const { specific, universal } = getItemNotes(item)
@@ -42,15 +55,23 @@ export default function NoteModal({ item, currentNote, onConfirm, onCancel }) {
     )
   }
 
+  function switchKb(l) {
+    setKbLang(l)
+    setTimeout(() => inputRef.current?.focus(), 0)
+  }
+
   function handleConfirm() {
-    const note = NOTE_OPTIONS
+    const presetNote = NOTE_OPTIONS
       .filter(opt => selected.includes(opt.id))
       .map(opt => opt.zh)
       .join(', ')
-    onConfirm(note)
+    const custom = customText.trim()
+    const note = [presetNote, custom].filter(Boolean).join(', ')
+    const notePrice = Math.max(0, parseFloat(customPrice) || 0)
+    onConfirm(note, notePrice)
   }
 
-  const count = selected.length
+  const count = selected.length + (customText.trim() ? 1 : 0)
 
   return (
     <div className="overlay" onClick={onCancel}>
@@ -96,6 +117,39 @@ export default function NoteModal({ item, currentNote, onConfirm, onCancel }) {
               onToggle={toggle}
             />
           ))}
+        </div>
+
+        {/* Custom free-text note with optional price */}
+        <div className="note-modal__section-label" style={{ marginTop: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>{isZh ? '自定义备注' : 'Custom note'}</span>
+          <span className="note-kb">
+            <button type="button" className={`note-kb__btn${kbLang === 'en' ? ' note-kb__btn--active' : ''}`} onClick={() => switchKb('en')}>EN</button>
+            <button type="button" className={`note-kb__btn${kbLang === 'zh' ? ' note-kb__btn--active' : ''}`} onClick={() => switchKb('zh')}>中文</button>
+          </span>
+        </div>
+        <div className="note-custom">
+          <input
+            ref={inputRef}
+            className="note-custom__text"
+            type="text"
+            lang={kbLang === 'zh' ? 'zh-Hans' : 'en'}
+            inputMode="text"
+            value={customText}
+            onChange={e => setCustomText(e.target.value)}
+            placeholder={kbLang === 'zh' ? '输入备注…（中文键盘）' : 'Type a note… (English)'}
+          />
+          <div className="note-custom__price">
+            <span className="note-custom__price-sign">£</span>
+            <input
+              type="number"
+              min="0"
+              step="0.50"
+              value={customPrice}
+              onChange={e => setCustomPrice(e.target.value)}
+              placeholder="0.00"
+              aria-label="Custom note price"
+            />
+          </div>
         </div>
 
         <div className="modal-btns" style={{ marginTop: 20 }}>

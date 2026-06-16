@@ -1,23 +1,25 @@
 import { useState, useEffect, useMemo } from 'react'
 import { formatPrice } from '../utils/receiptFormatter.js'
 import {
-  MIN_PEOPLE, BANQUETS, RICE_INCLUDED, banquetById,
-  isBanquetPersonComplete, buildBanquetItem,
+  MIN_PEOPLE, BANQUETS, RICE_INCLUDED, DUPLICATE_MAIN_FEE, FREE_DUPLICATE_PEOPLE, banquetById,
+  isBanquetPersonComplete, banquetSurcharge, buildBanquetItem,
 } from '../data/houseBanquets.js'
 
 const newPerson = () => ({ soupId: null, mainId: null })
+const CONFIRM_PRESSES = 3   // deliberate taps needed to add a paid duplicate main
 
-function OptionCard({ selected, disabled, onClick, zh, en, tag, badge }) {
+function OptionCard({ selected, disabled, confirming, onClick, zh, en, tag, badge, note }) {
   return (
     <button
       type="button"
-      className={`so-opt${selected ? ' so-opt--selected' : ''}${disabled ? ' so-opt--disabled' : ''}`}
+      className={`so-opt${selected ? ' so-opt--selected' : ''}${disabled ? ' so-opt--disabled' : ''}${confirming ? ' so-opt--confirming' : ''}`}
       onClick={onClick}
       disabled={disabled}
     >
       {zh && <span className="so-opt__zh">{zh}</span>}
       <span className="so-opt__en">{en}{tag && <span className="so-opt__tag"> {tag}</span>}</span>
-      {badge != null && <span className="so-opt__badge">{badge}</span>}
+      {note && <span className="so-opt__note">{note}</span>}
+      {badge != null && <span className="so-opt__badge so-opt__badge--fee">{badge}</span>}
     </button>
   )
 }
@@ -32,8 +34,30 @@ function Stepper({ value, min, onChange }) {
   )
 }
 
-function PersonCard({ index, person, banquet, disabledMainIds = [], onChange }) {
+// othersMainIds: mains held by any other person (drives the paid-duplicate gate)
+// lowerMainIds:  mains held by a lower-indexed person (this person is the dup that pays)
+function PersonCard({ index, person, banquet, othersMainIds = [], lowerMainIds = [], chargeDuplicates = true, onChange }) {
   const done = isBanquetPersonComplete(person)
+  const [pending, setPending] = useState({ mainId: null, presses: 0 })
+
+  function pickMain(m) {
+    if (person.mainId === m.id) return                       // already chosen — no-op
+    const paidDup = chargeDuplicates && othersMainIds.includes(m.id) && !m.chicken
+    if (!paidDup) {                                          // free: another's chicken, or nobody has it
+      onChange({ ...person, mainId: m.id })
+      setPending({ mainId: null, presses: 0 })
+      return
+    }
+    // paid duplicate — require several deliberate taps
+    const presses = (pending.mainId === m.id ? pending.presses : 0) + 1
+    if (presses >= CONFIRM_PRESSES) {
+      onChange({ ...person, mainId: m.id })
+      setPending({ mainId: null, presses: 0 })
+    } else {
+      setPending({ mainId: m.id, presses })
+    }
+  }
+
   return (
     <div className={`so-person${done ? ' so-person--done' : ''}`}>
       <div className="so-person__head">
@@ -58,16 +82,25 @@ function PersonCard({ index, person, banquet, disabledMainIds = [], onChange }) 
       <div className="so-person__label">Main 主菜</div>
       <div className="so-grid so-grid--mains">
         {banquet.mains.map(m => {
-          const taken = disabledMainIds.includes(m.id)
+          const isSelected = person.mainId === m.id
+          const isPending  = pending.mainId === m.id
+          const remaining  = CONFIRM_PRESSES - pending.presses
+          const paidInstance = chargeDuplicates && isSelected && lowerMainIds.includes(m.id) && !m.chicken  // this person pays
+          const previewPaid  = chargeDuplicates && !isSelected && othersMainIds.includes(m.id) && !m.chicken // picking = +£5
+          let badge = null
+          if (paidInstance)      badge = `+${formatPrice(DUPLICATE_MAIN_FEE)}`
+          else if (previewPaid)  badge = isPending ? `+${formatPrice(DUPLICATE_MAIN_FEE)} · ${remaining}×` : `+${formatPrice(DUPLICATE_MAIN_FEE)}`
           return (
             <OptionCard
               key={m.id}
-              selected={person.mainId === m.id}
-              disabled={taken}
-              onClick={() => onChange({ ...person, mainId: m.id })}
+              selected={isSelected}
+              confirming={isPending}
+              onClick={() => pickMain(m)}
               zh={m.zh}
               en={m.en}
-              tag={taken ? 'taken 已选' : (m.spicy ? '🌶' : null)}
+              tag={m.spicy ? '🌶' : null}
+              badge={badge}
+              note={isPending ? `Tap ${remaining}× more to add (+${formatPrice(DUPLICATE_MAIN_FEE)})` : null}
             />
           )
         })}
@@ -94,16 +127,9 @@ export default function BanquetModal({ onConfirm, onCancel }) {
     })
   }, [people])
 
-  const total = useMemo(
-    () => (banquet ? people * banquet.pricePerPerson : 0),
-    [banquet, people]
-  )
-
-  // Menu rule: each person must choose a DIFFERENT main if fewer than 5 people.
-  const enforceUnique = people < 5
-  const chosenMains = persons.map(p => p.mainId).filter(Boolean)
-  const mainsUnique = !enforceUnique || new Set(chosenMains).size === chosenMains.length
-  const allDone = persons.every(isBanquetPersonComplete) && mainsUnique
+  const surcharge = useMemo(() => banquetSurcharge(banquet, persons), [banquet, persons])
+  const total = banquet ? people * banquet.pricePerPerson + surcharge : 0
+  const allDone = persons.every(isBanquetPersonComplete)
 
   const canAdvance =
     stepKey === 'banquet' ? !!banquet :
@@ -175,25 +201,31 @@ export default function BanquetModal({ onConfirm, onCancel }) {
             </div>
           )}
 
-          {stepKey === 'mains' && (
-            <div className="so-persons">
-              <p className="so-hint">{enforceUnique
-                ? 'Each person must choose a different main 每位须选不同主菜 (under 5 people)'
-                : '5 or more people — mains may repeat 5位或以上主菜可重复'}</p>
-              {persons.map((p, i) => {
-                const takenByOthers = enforceUnique
-                  ? persons.filter((_, idx) => idx !== i).map(pp => pp.mainId).filter(Boolean)
-                  : []
-                return (
-                  <PersonCard key={i} index={i} person={p} banquet={banquet} disabledMainIds={takenByOthers} onChange={n => updatePerson(i, n)} />
-                )
-              })}
-            </div>
-          )}
+          {stepKey === 'mains' && (() => {
+            const chargeDuplicates = people < FREE_DUPLICATE_PEOPLE
+            return (
+              <div className="so-persons">
+                <p className="so-hint">{chargeDuplicates ? (
+                  <>Duplicate of another person's main = +{formatPrice(DUPLICATE_MAIN_FEE)} (chicken free) · tap a duplicate {CONFIRM_PRESSES}× to confirm<br />
+                  重复他人主菜加{formatPrice(DUPLICATE_MAIN_FEE)}（鸡肉免费），连按{CONFIRM_PRESSES}次确认</>
+                ) : (
+                  <>{FREE_DUPLICATE_PEOPLE}+ people — repeat any main freely, no extra charge<br />
+                  {FREE_DUPLICATE_PEOPLE}位或以上，主菜可自由重复，不另收费</>
+                )}</p>
+                {persons.map((p, i) => {
+                  const othersMainIds = persons.filter((_, idx) => idx !== i).map(pp => pp.mainId).filter(Boolean)
+                  const lowerMainIds  = persons.filter((_, idx) => idx <  i).map(pp => pp.mainId).filter(Boolean)
+                  return (
+                    <PersonCard key={i} index={i} person={p} banquet={banquet} othersMainIds={othersMainIds} lowerMainIds={lowerMainIds} chargeDuplicates={chargeDuplicates} onChange={n => updatePerson(i, n)} />
+                  )
+                })}
+              </div>
+            )
+          })()}
 
           {stepKey === 'review' && (
             <div className="so-review">
-              <div className="so-review__row"><span>{banquet.en} · {people} ppl</span><span>{formatPrice(total)}</span></div>
+              <div className="so-review__row"><span>{banquet.en} · {people} ppl</span><span>{formatPrice(people * banquet.pricePerPerson)}</span></div>
               <div className="so-review__sub">Incl: {banquet.included.map(i => i.en).join(', ')}</div>
               {persons.map((p, i) => {
                 const soup = banquet.soups.find(s => s.id === p.soupId)
@@ -201,6 +233,9 @@ export default function BanquetModal({ onConfirm, onCancel }) {
                 return <div key={i} className="so-review__sub">P{i + 1}: {soup?.en} · {main?.en}</div>
               })}
               <div className="so-review__sub">Served with {RICE_INCLUDED.en}</div>
+              {surcharge > 0 && (
+                <div className="so-review__row"><span>Duplicate main(s) +£5 each</span><span>{formatPrice(surcharge)}</span></div>
+              )}
               <div className="so-review__total"><span>TOTAL</span><span>{formatPrice(total)}</span></div>
             </div>
           )}

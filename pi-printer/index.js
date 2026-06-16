@@ -163,7 +163,7 @@ function buildReceiptBuffers(job) {
 
     catItems.forEach(item => {
       const name     = getItemName(item, lang)
-      const priceStr = formatPrice(item.price * item.quantity)
+      const priceStr = formatPrice((item.price + (item.notePrice || 0)) * item.quantity)
 
       if (lang === 'zh' && item.nameZh) {
         chunks.push(CMD_DOUBLE_SIZE)
@@ -215,7 +215,7 @@ function buildReceiptBuffers(job) {
   // Subtotal / delivery / discount lines
   const hasExtras = (discount && Number(discount) > 0) || (deliveryFee && Number(deliveryFee) > 0)
   if (hasExtras) {
-    const subtotal = (items || []).reduce((s, i) => s + i.price * i.quantity, 0)
+    const subtotal = (items || []).reduce((s, i) => s + (i.price + (i.notePrice || 0)) * i.quantity, 0)
     chunks.push(CMD_BOLD_ON)
     chunks.push(encodeText(pad('SUBTOTAL:', LINE_WIDTH - formatPrice(subtotal).length) + formatPrice(subtotal) + '\n'))
     if (deliveryFee && Number(deliveryFee) > 0) {
