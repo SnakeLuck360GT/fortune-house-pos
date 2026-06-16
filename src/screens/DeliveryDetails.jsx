@@ -64,7 +64,7 @@ export default function DeliveryDetails({ onNavigate, onConfirm, t }) {
 
   const needsConfirm = !!zone?.outOfArea
   const outAreaConfirmed = !needsConfirm || confirmText.trim().toLowerCase() === 'confirm'
-  const canStart = !!name.trim() && !!postcode.trim() && outAreaConfirmed
+  const canStart = !!postcode.trim() && outAreaConfirmed   // name is optional
 
   function handleConfirm() {
     if (!canStart) return
@@ -91,7 +91,7 @@ export default function DeliveryDetails({ onNavigate, onConfirm, t }) {
         </div>
 
         <div className="delivery-field">
-          <label>Customer Name</label>
+          <label>Customer Name <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
           <input
             type="text"
             value={name}
