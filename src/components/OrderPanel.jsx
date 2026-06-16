@@ -63,6 +63,14 @@ function OrderItem({ item, onIncrement, onDecrement, onRemove, onSetNote, onSpli
         <span className="order-item__line-total">{formatPrice(item.price * item.quantity)}</span>
       </div>
 
+      {Array.isArray(item.details) && item.details.length > 0 && (
+        <div className="order-item__details">
+          {item.details.map((d, i) => (
+            <div key={i} className={d.big ? 'order-item__detail--zh' : `order-item__detail--en${item.details.length > 2 ? ' order-item__detail--block' : ''}`}>{d.text}</div>
+          ))}
+        </div>
+      )}
+
       <div className="order-item__note-row">
         {item.note ? (
           <div className="order-item__note-display" onClick={() => setShowNoteModal(true)}>

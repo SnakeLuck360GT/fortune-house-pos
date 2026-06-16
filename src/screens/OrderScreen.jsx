@@ -5,6 +5,9 @@ import MenuItemCard from '../components/MenuItemCard.jsx'
 import OrderPanel   from '../components/OrderPanel.jsx'
 import ShareBoxModal from '../components/ShareBoxModal.jsx'
 import DrinkPickerModal from '../components/DrinkPickerModal.jsx'
+import SpecialOfferModal from '../components/SpecialOfferModal.jsx'
+import BanquetModal from '../components/BanquetModal.jsx'
+import HouseDishModal from '../components/HouseDishModal.jsx'
 import { useMenu }  from '../hooks/useMenu.js'
 import { useOrder } from '../hooks/useOrder.js'
 
@@ -21,6 +24,9 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
   const [toast,        setToast]        = useState(null)
   const [shareBoxItem, setShareBoxItem] = useState(null)
   const [drinkItem,    setDrinkItem]    = useState(null)
+  const [offerOpen,    setOfferOpen]    = useState(false)
+  const [banquetOpen,  setBanquetOpen]  = useState(false)
+  const [houseDish,    setHouseDish]    = useState(null)
 
   const displayLang = settings?.displayLang || 'both'
   const tableNumber = settings?.tableNumber || ''
@@ -38,17 +44,43 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
   }
 
   const handleAddItem = useCallback((item) => {
-    if (item.isShareBox) { setShareBoxItem(item); return }
-    if (item.isDrink)    { setDrinkItem(item);    return }
+    if (item.isOffer)     { setOfferOpen(true);    return }
+    if (item.isBanquet)   { setBanquetOpen(true);  return }
+    if (item.isHouseDish) { setHouseDish(item);    return }
+    if (item.isShareBox)  { setShareBoxItem(item); return }
+    if (item.isDrink)     { setDrinkItem(item);    return }
     order.addItem(item)
   }, [order])
 
   const handleSearchSelect = useCallback((item) => {
-    if (item.isShareBox) { setShareBoxItem(item); return }
-    if (item.isDrink)    { setDrinkItem(item);    return }
+    if (item.isOffer)     { setOfferOpen(true);    menu.clearSearch(); return }
+    if (item.isBanquet)   { setBanquetOpen(true);  menu.clearSearch(); return }
+    if (item.isHouseDish) { setHouseDish(item);    menu.clearSearch(); return }
+    if (item.isShareBox)  { setShareBoxItem(item); return }
+    if (item.isDrink)     { setDrinkItem(item);    return }
     order.addItem(item)
     menu.clearSearch()
   }, [order, menu])
+
+  function handleOfferConfirm(offerItems) {
+    offerItems.forEach(it => order.addItem(it))
+    setOfferOpen(false)
+    setActiveTab('order')
+    showToast('Special offer added', 'success')
+  }
+
+  function handleBanquetConfirm(banquetItem) {
+    order.addItem(banquetItem)
+    setBanquetOpen(false)
+    setActiveTab('order')
+    showToast('Banquet added', 'success')
+  }
+
+  function handleHouseDishConfirm(dishItem) {
+    if (dishItem) order.addItem(dishItem)
+    setHouseDish(null)
+    showToast('Dish added', 'success')
+  }
 
   function handleShareBoxConfirm(drinkNote) {
     order.addItem({ ...shareBoxItem, note: drinkNote })
@@ -242,6 +274,28 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
           item={drinkItem}
           onConfirm={handleDrinkConfirm}
           onCancel={() => setDrinkItem(null)}
+        />
+      )}
+
+      {offerOpen && (
+        <SpecialOfferModal
+          onConfirm={handleOfferConfirm}
+          onCancel={() => setOfferOpen(false)}
+        />
+      )}
+
+      {banquetOpen && (
+        <BanquetModal
+          onConfirm={handleBanquetConfirm}
+          onCancel={() => setBanquetOpen(false)}
+        />
+      )}
+
+      {houseDish && (
+        <HouseDishModal
+          dish={houseDish}
+          onConfirm={handleHouseDishConfirm}
+          onCancel={() => setHouseDish(null)}
         />
       )}
 

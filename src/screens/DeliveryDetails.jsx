@@ -12,6 +12,7 @@ export default function DeliveryDetails({ onNavigate, onConfirm, t }) {
   const [driveMin,     setDriveMin]     = useState(null)
   const [loadingDrive, setLoadingDrive] = useState(false)
   const [pcError,      setPcError]      = useState('')
+  const [confirmText,  setConfirmText]  = useState('')
 
   const debounce  = useRef(null)
   const currentPc = useRef('')
@@ -31,6 +32,7 @@ export default function DeliveryDetails({ onNavigate, onConfirm, t }) {
     setHouseNumber('')
     setZone(null)
     setDriveMin(null)
+    setConfirmText('')
 
     try {
       const info = await fetchPostcodeInfo(pc)
@@ -60,7 +62,12 @@ export default function DeliveryDetails({ onNavigate, onConfirm, t }) {
     ? `${houseNumber.trim()}${road ? ' ' + road : ''}, ${pc}`
     : road ? `${road}, ${pc}` : pc
 
+  const needsConfirm = !!zone?.outOfArea
+  const outAreaConfirmed = !needsConfirm || confirmText.trim().toLowerCase() === 'confirm'
+  const canStart = !!name.trim() && !!postcode.trim() && outAreaConfirmed
+
   function handleConfirm() {
+    if (!canStart) return
     onConfirm({
       customerName: name.trim(),
       address:      fullAddress,
@@ -135,6 +142,11 @@ export default function DeliveryDetails({ onNavigate, onConfirm, t }) {
                   <span>📍 {zone.label}</span>
                   <span className="delivery-info-fee">£{zone.fee.toFixed(2)} delivery</span>
                 </div>
+                {zone.outOfArea && (
+                  <div className="delivery-info-row" style={{ color: 'var(--accent-gold)', fontSize: 13, fontWeight: 600 }}>
+                    <span>⚠ Outside usual delivery area — please confirm</span>
+                  </div>
+                )}
                 <div className="delivery-info-row">
                   <span>🚗 Drive from Sale</span>
                   <span style={{ fontWeight: 700 }}>
@@ -143,13 +155,33 @@ export default function DeliveryDetails({ onNavigate, onConfirm, t }) {
                 </div>
               </div>
             )}
+
+            {needsConfirm && (
+              <div className="delivery-field">
+                <label style={{ color: 'var(--accent-gold)' }}>
+                  ⚠ Outside usual area — type <strong>confirm</strong> to allow this delivery
+                </label>
+                <input
+                  type="text"
+                  value={confirmText}
+                  onChange={e => setConfirmText(e.target.value)}
+                  placeholder="confirm"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  style={outAreaConfirmed
+                    ? { borderColor: 'var(--accent-green)' }
+                    : { borderColor: 'var(--accent-gold)' }}
+                />
+              </div>
+            )}
           </>
         )}
 
         <button
           className="delivery-confirm-btn"
           onClick={handleConfirm}
-          disabled={!name.trim() || !postcode.trim()}
+          disabled={!canStart}
         >
           Start Order →
         </button>

@@ -177,6 +177,26 @@ function buildReceiptBuffers(job) {
         chunks.push(CMD_BOLD_OFF)
       }
 
+      // Offer / set-meal breakdown — Chinese block large, English block small,
+      // with a blank line separating the two blocks.
+      if (Array.isArray(item.details)) {
+        const isBlock = item.details.length > 2
+        let prevBig = null
+        item.details.forEach(d => {
+          const text = typeof d === 'string' ? d : d.text
+          const big  = typeof d === 'object' && !!d.big
+          if (prevBig === true && !big && isBlock) chunks.push(lf(1))
+          if (big) {
+            chunks.push(CMD_DOUBLE_SIZE)
+            chunks.push(encodeText(`${text}\n`))
+            chunks.push(CMD_NORMAL_SIZE)
+          } else {
+            chunks.push(encodeText(`  ${text}\n`))
+          }
+          prevBig = big
+        })
+      }
+
       if (item.note) {
         parseNoteLines(item.note).forEach(({ prefix, zh, en }) => {
           chunks.push(CMD_DOUBLE_SIZE)

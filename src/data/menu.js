@@ -5,6 +5,44 @@ export const RESTAURANT_PHONE = '0161 969 3838'
 
 export const menu = [
   {
+    category: 'Special Offer',
+    categoryZh: '特价套餐',
+    items: [
+      {
+        id: 'so01',
+        nameEn: 'Special Takeaway Offer',
+        nameZh: '特价外卖套餐',
+        price: 24.00,
+        isOffer: true,
+        description: '2-course meal · £12 per person (min 2) · choose mains, sauces & rice · add duck or soup',
+      },
+    ],
+  },
+  {
+    category: 'House Banquets',
+    categoryZh: '富贵宴席',
+    items: [
+      {
+        id: 'hb01',
+        nameEn: 'House Banquet (Imperial / Peking)',
+        nameZh: '富贵套餐宴',
+        price: 21.50,
+        isBanquet: true,
+        description: 'Set banquet (min 2) · Imperial £25.50pp or Peking £21.50pp · soups, appetisers, aromatic crispy duck & a main course each',
+      },
+    ],
+  },
+  {
+    category: 'A La Carte',
+    categoryZh: '单点拼盘',
+    items: [
+      { id: 'al01', nameEn: 'Imperial Platter (per head, min 2)', nameZh: '帝王拼盘 (每位·最少2位)', price: 11.00, description: 'Prawn Toast · Imperial BBQ Ribs · Crispy Wontons · Mini Spring Rolls · S&P Chicken Wings · Crispy Seaweed · Sweet & Sour Dip' },
+      { id: 'al02', nameEn: 'Dim Sum Platter (per head, min 2)',  nameZh: '点心拼盘 (每位·最少2位)', price: 11.00, description: 'Sui Mai · Har Gao · Prawn Toast · Spring Rolls · Chicken Samosas · S&P Chicken Pieces · Crispy Seaweed' },
+      { id: 'al03', nameEn: 'Aromatic Crispy Duck (per quarter)', nameZh: '香酥鸭 (四分一只)', price: 12.00, description: 'Served with pancakes, leeks, cucumber & hoi sin sauce' },
+      { id: 'al04', nameEn: 'Deep Fried Crispy Lamb',             nameZh: '香酥羊肉',           price: 13.00, description: 'Served with pancakes, leeks, cucumber & hoi sin sauce' },
+    ],
+  },
+  {
     category: 'Soups',
     categoryZh: '汤类',
     items: [
@@ -72,7 +110,7 @@ export const menu = [
       { id: 'cs14', nameEn: 'Crispy Sliced Chicken Fillet with Lemon',   nameZh: '柠檬鸡片',       price: 10.50 },
       { id: 'cs15', nameEn: 'Pak Far Duckling',                          nameZh: '百花鸭',             price: 15.00 },
       { id: 'cs16', nameEn: 'Roast Duck (Orange / Lemon / Plum)',        nameZh: '烤鸭配汁 (橙子/柠檬/梅子)',           price: 12.00 },
-      { id: 'cs17', nameEn: 'Deep Fried Fish Fillet in Batter (Black Bean/Sichuan)',           nameZh: '脆炸鱼柳(士汁/四川)',         price: 10.70 },
+      { id: 'cs17', nameEn: 'Deep Fried Cod Fillet in Batter (Black Bean/Szechuan)',           nameZh: '脆炸鳕鱼柳(豉汁/四川)',         price: 10.70 },
       { id: 'cs18', nameEn: 'Poached Scallops (Ginger & Spring Onion or XO)', nameZh: '姜葱/XO汁扇贝', price: 13.00 },
       { id: 'cs19', nameEn: 'Marple Tofoo with Mince Pork',              nameZh: '猪肉麻婆豆腐',           price: 10.80 },
     ],
@@ -81,15 +119,15 @@ export const menu = [
     category: 'House Dishes',
     categoryZh: '例牌小炒',
     items: [
-      { id: 'hd01', nameEn: 'Fried Sliced Chicken',                      nameZh: '炒鸡肉片',           price: 8.50 },
-      { id: 'hd02', nameEn: 'Fried Sliced Beef',                         nameZh: '炒牛肉片',           price: 8.50 },
-      { id: 'hd03', nameEn: 'Fried Char Sui (BBQ Pork)',                  nameZh: '炒叉烧',             price: 8.50 },
-      { id: 'hd04', nameEn: 'Fried Shrimps',                             nameZh: '炒虾仁',             price: 8.50 },
-      { id: 'hd05', nameEn: 'Fried Sliced Lamb',                         nameZh: '炒羊肉片',           price: 9.50 },
-      { id: 'hd06', nameEn: 'Fried Sliced Roast Duck',                   nameZh: '炒烤鸭片',           price: 9.50 },
-      { id: 'hd07', nameEn: 'Fried King Prawns',                         nameZh: '炒大虾',             price: 10.50 },
-      { id: 'hd08', nameEn: 'House Special Mixed (Chicken, Beef, Pork & King Prawn)', nameZh: '招牌什锦炒', price: 10.50 },
-      { id: 'hd09', nameEn: 'Fillet Steak',                              nameZh: '牛柳',               price: 13.00 },
+      { id: 'hd01', nameEn: 'Fried Sliced Chicken',                      nameZh: '炒鸡肉片',           price: 8.50,  isHouseDish: true },
+      { id: 'hd02', nameEn: 'Fried Sliced Beef',                         nameZh: '炒牛肉片',           price: 8.50,  isHouseDish: true },
+      { id: 'hd03', nameEn: 'Fried Char Sui (BBQ Pork)',                  nameZh: '炒叉烧',             price: 8.50,  isHouseDish: true },
+      { id: 'hd04', nameEn: 'Fried Shrimps',                             nameZh: '炒虾仁',             price: 8.50,  isHouseDish: true },
+      { id: 'hd05', nameEn: 'Fried Sliced Lamb',                         nameZh: '炒羊肉片',           price: 9.50,  isHouseDish: true },
+      { id: 'hd06', nameEn: 'Fried Sliced Roast Duck',                   nameZh: '炒烤鸭片',           price: 9.50,  isHouseDish: true },
+      { id: 'hd07', nameEn: 'Fried King Prawns',                         nameZh: '炒大虾',             price: 10.50, isHouseDish: true },
+      { id: 'hd08', nameEn: 'House Special Mixed (Chicken, Beef, Pork & King Prawn)', nameZh: '招牌什锦炒', price: 10.50, isHouseDish: true },
+      { id: 'hd09', nameEn: 'Fillet Steak',                              nameZh: '牛柳',               price: 13.00, isHouseDish: true },
     ],
   },
   {

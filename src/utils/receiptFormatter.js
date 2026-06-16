@@ -65,6 +65,10 @@ export function buildReceiptLines({ items, total, tableNumber, discount, deliver
     const zhName = item.nameZh || item.nameEn
     lines.push({ type: 'zh', text: zhName, price, quantity: item.quantity })
     lines.push({ type: 'en', text: `${item.nameEn}  ×${item.quantity}` })
+    if (Array.isArray(item.details)) {
+      const isBlock = item.details.length > 2   // multi-line breakdown vs single zh/en pair
+      item.details.forEach(d => lines.push({ type: 'detail', text: d.text, big: d.big, block: isBlock }))
+    }
     if (item.note) {
       parseNoteLines(item.note).forEach(({ prefix, zh, en }) => {
         lines.push({ type: 'note-zh', text: `${prefix} ${zh}` })
@@ -106,6 +110,7 @@ export function buildReceiptText({ items, total, tableNumber, discount, delivery
         case 'order-type':  return center(l.text, LINE_WIDTH)
         case 'zh':          return pad(l.text, LINE_WIDTH - l.price.length) + l.price
         case 'en':          return `  ${l.text}`
+        case 'detail':      return `  ${l.text}`
         case 'note':
         case 'note-zh':     return `  ${l.text}`
         case 'note-en':     return `    ${l.text}`
@@ -155,6 +160,16 @@ export function buildEscposReceipt({ items, total, tableNumber, discount, delive
     chunks.push(CMD_NORMAL)
     // English name + qty — normal size, indented
     chunks.push(enc(`  ${item.nameEn}  x${item.quantity}\n`))
+    if (Array.isArray(item.details)) {
+      const isBlock = item.details.length > 2
+      let prevBig = null
+      item.details.forEach(d => {
+        if (prevBig === true && !d.big && isBlock) chunks.push(lf(1))   // gap between zh/en blocks
+        if (d.big) chunks.push(CMD_DOUBLE, enc(`${d.text}\n`), CMD_NORMAL)
+        else       chunks.push(enc(`  ${d.text}\n`))
+        prevBig = !!d.big
+      })
+    }
     if (item.note) {
       chunks.push(CMD_DOUBLE)
       parseNoteLines(item.note).forEach(({ prefix, zh }) =>
