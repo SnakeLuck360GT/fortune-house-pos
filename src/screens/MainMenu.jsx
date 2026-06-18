@@ -175,7 +175,7 @@ export default function MainMenu({ onNavigate, t, settings }) {
       <div className="main-menu__primary">
         <button
           className="main-menu__cta main-menu__cta--takeaway"
-          onClick={() => onNavigate('order', 'takeaway')}
+          onClick={() => onNavigate('takeaway')}
         >
           <span className="main-menu__cta-icon">🛍</span>
           <span className="main-menu__cta-en">Takeaway</span>

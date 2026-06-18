@@ -1,7 +1,7 @@
 import { buildReceiptLines } from '../utils/receiptFormatter.js'
 
-export default function ReceiptPreview({ items, total, tableNumber, discount, deliveryFee, orderMode, deliveryInfo, phone, orderId }) {
-  const lines = buildReceiptLines({ items, total, tableNumber, discount, deliveryFee, orderMode, deliveryInfo, phone, timestamp: Date.now() })
+export default function ReceiptPreview({ items, total, tableNumber, discount, deliveryFee, orderMode, deliveryInfo, phone, customerName, orderId }) {
+  const lines = buildReceiptLines({ items, total, tableNumber, discount, deliveryFee, orderMode, deliveryInfo, phone, customerName, timestamp: Date.now() })
 
   return (
     <div className="receipt-preview">

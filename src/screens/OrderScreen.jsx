@@ -17,7 +17,7 @@ function Toast({ message, type }) {
   return <div className={`toast toast--${type}`}>{message}</div>
 }
 
-export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, orderMode, deliveryInfo }) {
+export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, orderMode, deliveryInfo, takeawayInfo }) {
   const menu  = useMenu()
   const order = useOrder()
 
@@ -26,12 +26,15 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
   const [toast,        setToast]        = useState(null)
   const [shareBoxItem, setShareBoxItem] = useState(null)
   const [drinkItem,    setDrinkItem]    = useState(null)
-  const [takeawayPhone, setTakeawayPhone] = useState('')
   const [platterItem, setPlatterItem]   = useState(null)
   const [duckItem,    setDuckItem]      = useState(null)
   const [offerOpen,    setOfferOpen]    = useState(false)
   const [banquetOpen,  setBanquetOpen]  = useState(false)
   const [houseDish,    setHouseDish]    = useState(null)
+  // Saved selections for the editable set-menu triggers (so re-pressing edits)
+  const [offerState,    setOfferState]    = useState(null)
+  const [banquetState,  setBanquetState]  = useState(null)
+  const [platterStates, setPlatterStates] = useState({})
 
   const displayLang = settings?.displayLang || 'both'
   const tableNumber = settings?.tableNumber || ''
@@ -71,11 +74,33 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
     menu.clearSearch()
   }, [order, menu])
 
-  function handlePlatterConfirm(line) {
-    order.addItem(line)
+  // People shown as the red badge for an editable set-menu trigger
+  const groupPeople = (g) => order.items.find(i => i.group === g)?.people || 0
+  const badgeFor = (item) =>
+    item.isOffer   ? groupPeople('so01')   :
+    item.isBanquet ? groupPeople('hb01')   :
+    item.isPlatter ? groupPeople(item.id)  :
+    order.getQuantityInOrder(item.id)
+
+  function resetInstances() {
+    setOfferState(null)
+    setBanquetState(null)
+    setPlatterStates({})
+  }
+
+  function handleClearOrder() {
+    order.clearOrder()
+    resetInstances()
+  }
+
+  function handlePlatterConfirm(line, meta) {
+    const g = platterItem.id
+    order.removeGroup(g)
+    order.addItem({ ...line, group: g, people: meta.people })
+    setPlatterStates(s => ({ ...s, [g]: meta }))
     setPlatterItem(null)
     setActiveTab('order')
-    showToast('Platter added', 'success')
+    showToast('Platter saved', 'success')
   }
 
   function handleDuckConfirm(line) {
@@ -85,18 +110,22 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
     showToast('Crispy duck added', 'success')
   }
 
-  function handleOfferConfirm(offerItems) {
-    offerItems.forEach(it => order.addItem(it))
+  function handleOfferConfirm(offerItems, meta) {
+    order.removeGroup('so01')
+    offerItems.forEach(it => order.addItem({ ...it, group: 'so01', people: meta.people }))
+    setOfferState(meta)
     setOfferOpen(false)
     setActiveTab('order')
-    showToast('Special offer added', 'success')
+    showToast('Special offer saved', 'success')
   }
 
-  function handleBanquetConfirm(banquetItem) {
-    order.addItem(banquetItem)
+  function handleBanquetConfirm(banquetItem, meta) {
+    order.removeGroup('hb01')
+    order.addItem({ ...banquetItem, group: 'hb01', people: meta.people })
+    setBanquetState(meta)
     setBanquetOpen(false)
     setActiveTab('order')
-    showToast('Banquet added', 'success')
+    showToast('Banquet saved', 'success')
   }
 
   function handleHouseDishConfirm(dishItem) {
@@ -115,7 +144,9 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
     setDrinkItem(null)
   }
 
-  const effectivePhone = (orderMode === 'delivery' ? deliveryInfo?.phone : takeawayPhone) || ''
+  const customer       = orderMode === 'delivery' ? deliveryInfo : takeawayInfo
+  const effectivePhone = customer?.phone || ''
+  const customerName   = customer?.customerName || ''
 
   async function handlePrint() {
     if (order.items.length === 0) return
@@ -124,6 +155,7 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
       orderId:     `ORD-${Date.now()}`,
       orderMode:   orderMode || 'takeaway',
       deliveryInfo: orderMode === 'delivery' ? deliveryInfo : null,
+      customerName: customerName.trim(),
       phone:       effectivePhone.trim(),
       items:       order.items,
       total:       order.total,
@@ -141,6 +173,7 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       showToast(t.jobSent, 'success')
       order.clearOrder()
+      resetInstances()
     } catch (err) {
       console.error('Print failed:', err)
       showToast(t.jobFailed, 'error')
@@ -256,7 +289,7 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
             <MenuItemCard
               key={item.id}
               item={item}
-              qtyInOrder={order.getQuantityInOrder(item.id)}
+              qtyInOrder={badgeFor(item)}
               onAdd={handleAddItem}
               displayLang={displayLang}
             />
@@ -280,14 +313,14 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
         onSplit={order.splitItem}
         onSetDiscount={order.setDiscount}
         onSetDeliveryFee={order.setDeliveryFee}
-        onClear={order.clearOrder}
+        onClear={handleClearOrder}
         onPrint={handlePrint}
         printing={printing}
         t={t}
         mobileActive={isOrder}
         tableNumber={tableNumber}
         phone={effectivePhone}
-        onSetPhone={setTakeawayPhone}
+        customerName={customerName}
       />
 
       {shareBoxItem && (
@@ -307,6 +340,7 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
 
       {offerOpen && (
         <SpecialOfferModal
+          initial={groupPeople('so01') > 0 ? offerState : null}
           onConfirm={handleOfferConfirm}
           onCancel={() => setOfferOpen(false)}
         />
@@ -314,6 +348,7 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
 
       {banquetOpen && (
         <BanquetModal
+          initial={groupPeople('hb01') > 0 ? banquetState : null}
           onConfirm={handleBanquetConfirm}
           onCancel={() => setBanquetOpen(false)}
         />
@@ -330,6 +365,7 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
       {platterItem && (
         <PlatterModal
           item={platterItem}
+          initial={groupPeople(platterItem.id) > 0 ? platterStates[platterItem.id] : null}
           onConfirm={handlePlatterConfirm}
           onCancel={() => setPlatterItem(null)}
         />

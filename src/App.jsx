@@ -3,6 +3,7 @@ import { useLanguage } from './hooks/useLanguage.js'
 import MainMenu       from './screens/MainMenu.jsx'
 import OrderScreen    from './screens/OrderScreen.jsx'
 import DeliveryDetails from './screens/DeliveryDetails.jsx'
+import TakeawayDetails from './screens/TakeawayDetails.jsx'
 import Settings       from './screens/Settings.jsx'
 import Queue          from './screens/Queue.jsx'
 
@@ -17,6 +18,7 @@ export default function App() {
   const [screen,       setScreen]       = useState('menu')
   const [orderMode,    setOrderMode]    = useState(null)     // 'takeaway' | 'delivery'
   const [deliveryInfo, setDeliveryInfo] = useState(null)     // from DeliveryDetails
+  const [takeawayInfo, setTakeawayInfo] = useState(null)     // from TakeawayDetails
   const { lang, setLang, t } = useLanguage()
   const [settings, setSettings] = useState(loadSettings)
 
@@ -38,10 +40,17 @@ export default function App() {
     setScreen('order')
   }
 
+  function handleTakeawayConfirm(info) {
+    setOrderMode('takeaway')
+    setTakeawayInfo(info)
+    setScreen('order')
+  }
+
   function goMenu() {
     setScreen('menu')
     setOrderMode(null)
     setDeliveryInfo(null)
+    setTakeawayInfo(null)
   }
 
   return (
@@ -56,6 +65,13 @@ export default function App() {
           t={t}
         />
       )}
+      {screen === 'takeaway' && (
+        <TakeawayDetails
+          onNavigate={navigate}
+          onConfirm={handleTakeawayConfirm}
+          t={t}
+        />
+      )}
       {screen === 'order' && (
         <OrderScreen
           onNavigate={navigate}
@@ -65,6 +81,7 @@ export default function App() {
           settings={settings}
           orderMode={orderMode}
           deliveryInfo={deliveryInfo}
+          takeawayInfo={takeawayInfo}
         />
       )}
       {screen === 'settings' && (

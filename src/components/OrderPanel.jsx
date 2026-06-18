@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { formatPrice } from '../utils/receiptFormatter.js'
-import { isValidUkPhone } from '../utils/phone.js'
 import ReceiptPreview from './ReceiptPreview.jsx'
 import NoteModal from './NoteModal.jsx'
 
@@ -19,7 +18,7 @@ function ConfirmModal({ message, onConfirm, onCancel, yesLabel, noLabel }) {
   )
 }
 
-function PreviewModal({ items, total, tableNumber, discount, deliveryFee, orderMode, deliveryInfo, phone, onClose }) {
+function PreviewModal({ items, total, tableNumber, discount, deliveryFee, orderMode, deliveryInfo, phone, customerName, onClose }) {
   return (
     <div className="overlay" onClick={onClose}>
       <div className="modal" style={{ maxWidth:420, width:'100%', maxHeight:'85vh', display:'flex', flexDirection:'column' }} onClick={e => e.stopPropagation()}>
@@ -28,7 +27,7 @@ function PreviewModal({ items, total, tableNumber, discount, deliveryFee, orderM
           <button onClick={onClose} style={{ fontSize:22, color:'var(--text-muted)', padding:'2px 8px' }}>×</button>
         </div>
         <div style={{ overflow:'auto', flex:1 }}>
-          <ReceiptPreview items={items} total={total} tableNumber={tableNumber} discount={discount} deliveryFee={deliveryFee} orderMode={orderMode} deliveryInfo={deliveryInfo} phone={phone} />
+          <ReceiptPreview items={items} total={total} tableNumber={tableNumber} discount={discount} deliveryFee={deliveryFee} orderMode={orderMode} deliveryInfo={deliveryInfo} phone={phone} customerName={customerName} />
         </div>
         <button className="modal-btn modal-btn--cancel" style={{ marginTop:16 }} onClick={onClose}>Close</button>
       </div>
@@ -103,13 +102,12 @@ export default function OrderPanel({
   items, subtotal, total, discount, deliveryFee,
   onIncrement, onDecrement, onRemove, onSetNote, onSplit, onSetDiscount, onSetDeliveryFee, onClear, onPrint,
   printing, t, mobileActive, tableNumber,
-  phone = '', onSetPhone,
+  phone = '', customerName = '',
 }) {
   const [showConfirm, setShowConfirm] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
 
   const isDelivery = orderMode === 'delivery'
-  const phoneOk = !phone.trim() || isValidUkPhone(phone)   // optional, but valid if entered
 
   return (
     <div className={`right-panel${mobileActive ? ' right-panel--active' : ''}`}>
@@ -126,7 +124,11 @@ export default function OrderPanel({
             )}
           </div>
         ) : (
-          <div style={{ fontWeight:800, fontSize:15 }}>🛍 Takeaway / 外带</div>
+          <div>
+            <div style={{ fontWeight:800, fontSize:15 }}>🛍 Takeaway / 外带</div>
+            {customerName && <div style={{ fontSize:13, opacity:0.85 }}>{customerName}</div>}
+            {phone && <div style={{ fontSize:12, opacity:0.7, marginTop:2 }}>📞 {phone}</div>}
+          </div>
         )}
         {isDelivery && deliveryInfo?.driveMinutes && (
           <div style={{ fontSize:13, fontWeight:700, opacity:0.9 }}>~{deliveryInfo.driveMinutes} min</div>
@@ -168,25 +170,6 @@ export default function OrderPanel({
       <div className="till-footer">
         {items.length > 0 && (
           <div className="till-extras">
-            {orderMode !== 'delivery' && (
-              <div className="till-extra-row till-extra-row--phone">
-                <label htmlFor="phone-input">📞 Phone</label>
-                <input
-                  id="phone-input"
-                  type="tel"
-                  inputMode="tel"
-                  value={phone}
-                  onChange={e => onSetPhone && onSetPhone(e.target.value)}
-                  placeholder="optional"
-                  style={!phoneOk ? { borderColor: 'var(--danger)' } : undefined}
-                />
-              </div>
-            )}
-            {orderMode !== 'delivery' && phone.trim() && !phoneOk && (
-              <div style={{ fontSize: 12, color: 'var(--danger)', marginTop: -4, marginBottom: 4 }}>
-                ✗ Check the number — doesn't look like a UK phone
-              </div>
-            )}
             {orderMode === 'delivery' && (
               <div className="till-extra-row">
                 <label htmlFor="delivery-input">🛵 Delivery fee</label>
@@ -225,7 +208,7 @@ export default function OrderPanel({
           <button
             className="till-btn till-btn--print"
             onClick={onPrint}
-            disabled={items.length === 0 || printing || !phoneOk}
+            disabled={items.length === 0 || printing}
           >
             {printing ? <span className="spinner" /> : t.printReceipt}
           </button>
@@ -261,7 +244,7 @@ export default function OrderPanel({
         <PreviewModal
           items={items} total={total} tableNumber={tableNumber}
           discount={discount} deliveryFee={deliveryFee}
-          orderMode={orderMode} deliveryInfo={deliveryInfo} phone={phone}
+          orderMode={orderMode} deliveryInfo={deliveryInfo} phone={phone} customerName={customerName}
           onClose={() => setShowPreview(false)}
         />
       )}

@@ -46,7 +46,7 @@ function parseNoteLines(note) {
 
 // Returns a structured array of line objects for rich rendering in ReceiptPreview.
 // type: 'sep-heavy' | 'sep-light' | 'blank' | 'center' | 'zh' | 'en' | 'note' | 'subtotal' | 'total' | 'footer'
-export function buildReceiptLines({ items, total, tableNumber, discount, deliveryFee, orderMode, deliveryInfo, phone, timestamp }) {
+export function buildReceiptLines({ items, total, tableNumber, discount, deliveryFee, orderMode, deliveryInfo, phone, customerName, timestamp }) {
   const ts = timestamp ? new Date(timestamp) : new Date()
   const dateStr = ts.toLocaleDateString('en-GB')
   const timeStr = ts.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
@@ -65,6 +65,8 @@ export function buildReceiptLines({ items, total, tableNumber, discount, deliver
   if (isDelivery && deliveryInfo) {
     if (deliveryInfo.customerName) lines.push({ type: 'center', text: deliveryInfo.customerName })
     if (deliveryInfo.address)      lines.push({ type: 'center', text: deliveryInfo.address })
+  } else if (customerName) {
+    lines.push({ type: 'center', text: customerName })
   }
   if (phone) lines.push({ type: 'center', text: `Tel: ${phone}` })
   etaLines(ts, isDelivery).forEach(text => lines.push({ type: 'eta', text }))

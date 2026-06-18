@@ -116,12 +116,14 @@ function PersonCard({ index, person, onChange }) {
 }
 
 // ─── Main modal ────────────────────────────────────────────────────────────────
-export default function SpecialOfferModal({ onConfirm, onCancel }) {
+export default function SpecialOfferModal({ initial, onConfirm, onCancel }) {
   const [stepIdx, setStepIdx] = useState(0)
-  const [people,  setPeople]  = useState(MIN_PEOPLE)
-  const [persons, setPersons] = useState(() => Array.from({ length: MIN_PEOPLE }, newPerson))
-  const [duckId,  setDuckId]  = useState('none')
-  const [soups,   setSoups]   = useState({})
+  const [people,  setPeople]  = useState(initial?.people || MIN_PEOPLE)
+  const [persons, setPersons] = useState(() =>
+    initial?.persons ? initial.persons.map(p => ({ ...p })) : Array.from({ length: MIN_PEOPLE }, newPerson)
+  )
+  const [duckId,  setDuckId]  = useState(initial?.duckId || 'none')
+  const [soups,   setSoups]   = useState(initial?.soups ? { ...initial.soups } : {})
 
   const step = STEPS[stepIdx]
 
@@ -153,7 +155,7 @@ export default function SpecialOfferModal({ onConfirm, onCancel }) {
   }
 
   function handleConfirm() {
-    onConfirm(buildOfferItems({ people, persons, duckId, soups }))
+    onConfirm(buildOfferItems({ people, persons, duckId, soups }), { people, persons, duckId, soups })
   }
 
   function next() { setStepIdx(i => Math.min(STEPS.length - 1, i + 1)) }

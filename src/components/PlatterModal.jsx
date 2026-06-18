@@ -5,8 +5,8 @@ const MIN_PEOPLE = 2
 const stripParen = s => (s || '').replace(/\s*\(.*\)\s*/, '').trim()
 
 // Per-head platters (Imperial / Dim Sum) — pick number of people, priced × head.
-export default function PlatterModal({ item, onConfirm, onCancel }) {
-  const [people, setPeople] = useState(MIN_PEOPLE)
+export default function PlatterModal({ item, initial, onConfirm, onCancel }) {
+  const [people, setPeople] = useState(initial?.people || MIN_PEOPLE)
   const total = people * item.price
 
   function handleConfirm() {
@@ -16,7 +16,7 @@ export default function PlatterModal({ item, onConfirm, onCancel }) {
       nameZh:   `${stripParen(item.nameZh)} (${people}人)`,
       price:    total,
       category: 'A La Carte',
-    })
+    }, { people })
   }
 
   return (

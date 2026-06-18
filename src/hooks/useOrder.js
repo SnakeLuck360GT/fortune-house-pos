@@ -19,6 +19,8 @@ function orderReducer(state, action) {
     }
     case 'REMOVE_ITEM':
       return { ...state, items: state.items.filter(i => i.id !== action.id) }
+    case 'REMOVE_GROUP':
+      return { ...state, items: state.items.filter(i => i.group !== action.group) }
     case 'INCREMENT':
       return {
         ...state,
@@ -75,6 +77,7 @@ export function useOrder() {
 
   const addItem = useCallback((item) => dispatch({ type: 'ADD_ITEM', item }), [])
   const removeItem = useCallback((id) => dispatch({ type: 'REMOVE_ITEM', id }), [])
+  const removeGroup = useCallback((group) => dispatch({ type: 'REMOVE_GROUP', group }), [])
   const increment = useCallback((id) => dispatch({ type: 'INCREMENT', id }), [])
   const decrement = useCallback((id) => dispatch({ type: 'DECREMENT', id }), [])
   const setNote = useCallback((id, note, notePrice) => dispatch({ type: 'SET_NOTE', id, note, notePrice }), [])
@@ -114,6 +117,7 @@ export function useOrder() {
     itemCount,
     addItem,
     removeItem,
+    removeGroup,
     increment,
     decrement,
     setNote,

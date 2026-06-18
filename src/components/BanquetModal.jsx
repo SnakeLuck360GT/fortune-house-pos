@@ -109,11 +109,13 @@ function PersonCard({ index, person, banquet, othersMainIds = [], lowerMainIds =
   )
 }
 
-export default function BanquetModal({ onConfirm, onCancel }) {
-  const [stepIdx, setStepIdx]   = useState(0)
-  const [banquetId, setBanquetId] = useState(null)
-  const [people,  setPeople]    = useState(MIN_PEOPLE)
-  const [persons, setPersons]   = useState(() => Array.from({ length: MIN_PEOPLE }, newPerson))
+export default function BanquetModal({ initial, onConfirm, onCancel }) {
+  const [stepIdx, setStepIdx]   = useState(initial?.banquetId ? 1 : 0)   // skip banquet choice when editing
+  const [banquetId, setBanquetId] = useState(initial?.banquetId || null)
+  const [people,  setPeople]    = useState(initial?.people || MIN_PEOPLE)
+  const [persons, setPersons]   = useState(() =>
+    initial?.persons ? initial.persons.map(p => ({ ...p })) : Array.from({ length: MIN_PEOPLE }, newPerson)
+  )
 
   const banquet = banquetById(banquetId)
   const STEPS = ['banquet', 'people', 'mains', 'review']
@@ -143,7 +145,7 @@ export default function BanquetModal({ onConfirm, onCancel }) {
   function back() { if (stepIdx === 0) onCancel(); else setStepIdx(i => i - 1) }
 
   function handleConfirm() {
-    onConfirm(buildBanquetItem({ banquet, people, persons }))
+    onConfirm(buildBanquetItem({ banquet, people, persons }), { banquetId, people, persons })
   }
 
   const stepTitle = { banquet: 'Choose a banquet', people: 'How many people?', mains: 'Soup & main each', review: 'Review & add' }[stepKey]
