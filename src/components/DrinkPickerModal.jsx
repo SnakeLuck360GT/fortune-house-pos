@@ -4,8 +4,6 @@ const DRINKS = [
   { id: 'coke',  nameEn: 'Coca-Cola'    },
   { id: 'diet',  nameEn: 'Diet Coke'    },
   { id: 'fanta', nameEn: 'Fanta Orange' },
-  { id: 'lemon', nameEn: 'Lemonade'     },
-  { id: 'water', nameEn: 'Water'        },
 ]
 
 export default function DrinkPickerModal({ item, onConfirm, onCancel }) {

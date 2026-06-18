@@ -8,6 +8,8 @@ import DrinkPickerModal from '../components/DrinkPickerModal.jsx'
 import SpecialOfferModal from '../components/SpecialOfferModal.jsx'
 import BanquetModal from '../components/BanquetModal.jsx'
 import HouseDishModal from '../components/HouseDishModal.jsx'
+import PlatterModal from '../components/PlatterModal.jsx'
+import DuckPortionModal from '../components/DuckPortionModal.jsx'
 import { useMenu }  from '../hooks/useMenu.js'
 import { useOrder } from '../hooks/useOrder.js'
 
@@ -25,6 +27,8 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
   const [shareBoxItem, setShareBoxItem] = useState(null)
   const [drinkItem,    setDrinkItem]    = useState(null)
   const [takeawayPhone, setTakeawayPhone] = useState('')
+  const [platterItem, setPlatterItem]   = useState(null)
+  const [duckItem,    setDuckItem]      = useState(null)
   const [offerOpen,    setOfferOpen]    = useState(false)
   const [banquetOpen,  setBanquetOpen]  = useState(false)
   const [houseDish,    setHouseDish]    = useState(null)
@@ -48,6 +52,8 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
     if (item.isOffer)     { setOfferOpen(true);    return }
     if (item.isBanquet)   { setBanquetOpen(true);  return }
     if (item.isHouseDish) { setHouseDish(item);    return }
+    if (item.isPlatter)   { setPlatterItem(item);  return }
+    if (item.isDuck)      { setDuckItem(item);     return }
     if (item.isShareBox)  { setShareBoxItem(item); return }
     if (item.isDrink)     { setDrinkItem(item);    return }
     order.addItem(item)
@@ -57,11 +63,27 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
     if (item.isOffer)     { setOfferOpen(true);    menu.clearSearch(); return }
     if (item.isBanquet)   { setBanquetOpen(true);  menu.clearSearch(); return }
     if (item.isHouseDish) { setHouseDish(item);    menu.clearSearch(); return }
+    if (item.isPlatter)   { setPlatterItem(item);  menu.clearSearch(); return }
+    if (item.isDuck)      { setDuckItem(item);     menu.clearSearch(); return }
     if (item.isShareBox)  { setShareBoxItem(item); return }
     if (item.isDrink)     { setDrinkItem(item);    return }
     order.addItem(item)
     menu.clearSearch()
   }, [order, menu])
+
+  function handlePlatterConfirm(line) {
+    order.addItem(line)
+    setPlatterItem(null)
+    setActiveTab('order')
+    showToast('Platter added', 'success')
+  }
+
+  function handleDuckConfirm(line) {
+    order.addItem(line)
+    setDuckItem(null)
+    setActiveTab('order')
+    showToast('Crispy duck added', 'success')
+  }
 
   function handleOfferConfirm(offerItems) {
     offerItems.forEach(it => order.addItem(it))
@@ -302,6 +324,22 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
           dish={houseDish}
           onConfirm={handleHouseDishConfirm}
           onCancel={() => setHouseDish(null)}
+        />
+      )}
+
+      {platterItem && (
+        <PlatterModal
+          item={platterItem}
+          onConfirm={handlePlatterConfirm}
+          onCancel={() => setPlatterItem(null)}
+        />
+      )}
+
+      {duckItem && (
+        <DuckPortionModal
+          item={duckItem}
+          onConfirm={handleDuckConfirm}
+          onCancel={() => setDuckItem(null)}
         />
       )}
 
