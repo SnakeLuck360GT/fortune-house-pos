@@ -1,14 +1,20 @@
 export const NOTE_OPTIONS = [
   { id: 'no-chilli',       zh: '不加辣',   en: 'No Chilli' },
   { id: 'no-garlic',       zh: '不加蒜',   en: 'No Garlic' },
-  { id: 'no-onion',        zh: '不加洋葱', en: 'No Onion' },
+  { id: 'no-onion',        zh: '不加洋葱', en: 'No Onions' },
   { id: 'no-spring-onion', zh: '不加葱',   en: 'No Spring Onion' },
+  { id: 'no-vegetables',   zh: '不加蔬菜', en: 'No Vegetables' },
+  { id: 'no-mushrooms',    zh: '不加蘑菇', en: 'No Mushrooms' },
+  { id: 'no-sugar',        zh: '不加糖',   en: 'No Sugar' },
   { id: 'no-msg',          zh: '不加味精', en: 'No MSG' },
   { id: 'no-salt',         zh: '不加盐',   en: 'No Salt' },
   { id: 'no-egg',          zh: '不加蛋',   en: 'No Egg' },
   { id: 'no-pork',         zh: '不加猪肉', en: 'No Pork' },
   { id: 'extra-sauce',     zh: '多加酱',   en: 'Extra Sauce' },
   { id: 'extra-spicy',     zh: '加辣',     en: 'Extra Spicy' },
+  { id: 'extra-chilli',    zh: '多加辣椒', en: 'Extra Chilli' },
+  { id: 'extra-mushrooms', zh: '多加蘑菇', en: 'Extra Mushrooms' },
+  { id: 'extra-vegetables',zh: '多加蔬菜', en: 'Extra Vegetables' },
   { id: 'extra-rice',      zh: '多加饭',   en: 'Extra Rice' },
   { id: 'extra-noodles',   zh: '多加面',   en: 'Extra Noodles' },
   { id: 'extra-crispy',    zh: '加脆',     en: 'Extra Crispy' },
@@ -18,7 +24,12 @@ export const NOTE_OPTIONS = [
 const BY_ID = Object.fromEntries(NOTE_OPTIONS.map(o => [o.id, o]))
 
 // Notes that are always shown regardless of dish
-const UNIVERSAL_IDS = ['extra-spicy', 'extra-sauce', 'well-done', 'no-msg', 'no-salt']
+const UNIVERSAL_IDS = [
+  'no-msg', 'no-salt',
+  'no-vegetables', 'no-onion', 'no-mushrooms', 'no-garlic', 'no-sugar', 'no-chilli',
+  'extra-spicy', 'extra-chilli', 'extra-mushrooms', 'extra-vegetables', 'extra-sauce',
+  'well-done',
+]
 
 // Returns { specific: NoteOption[], universal: NoteOption[] } for a given menu item.
 // specific = notes relevant to this dish's ingredients

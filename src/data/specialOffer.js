@@ -96,6 +96,10 @@ export function buildOfferItems({ people, persons, duckId, soups }) {
     const rice  = byId(RICE_OPTIONS, p.riceId)
     zh.push(`第${i + 1}位: ${main?.zh ?? '?'} · ${sauce?.zh ?? '?'} · ${rice?.zh ?? '?'}`)
     en.push(`P${i + 1}: ${stripParen(main?.en ?? '?')} · ${sauce?.en ?? '?'} · ${rice?.en ?? '?'}`)
+    if (p.note?.trim()) {
+      zh.push(`  备注: ${p.note.trim()}`)
+      en.push(`  Note: ${p.note.trim()}`)
+    }
   })
   const details = [
     ...zh.map(text => ({ text, big: true })),

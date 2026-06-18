@@ -98,10 +98,12 @@ function etaLines(ts, isDelivery) {
 
 // ─── Note helpers ────────────────────────────────────────────────────────────
 const ZH_TO_EN = {
-  '不加辣': 'No Chilli',    '不加蒜': 'No Garlic',      '不加洋葱': 'No Onion',
-  '不加葱': 'No Spring Onion', '不加味精': 'No MSG',    '不加盐': 'No Salt',
+  '不加辣': 'No Chilli',    '不加蒜': 'No Garlic',      '不加洋葱': 'No Onions',
+  '不加葱': 'No Spring Onion', '不加蔬菜': 'No Vegetables', '不加蘑菇': 'No Mushrooms',
+  '不加糖': 'No Sugar',     '不加味精': 'No MSG',       '不加盐': 'No Salt',
   '不加蛋': 'No Egg',       '不加猪肉': 'No Pork',      '多加酱': 'Extra Sauce',
-  '加辣':   'Extra Spicy',  '多加饭': 'Extra Rice',      '多加面': 'Extra Noodles',
+  '加辣':   'Extra Spicy',  '多加辣椒': 'Extra Chilli', '多加蘑菇': 'Extra Mushrooms',
+  '多加蔬菜': 'Extra Vegetables', '多加饭': 'Extra Rice', '多加面': 'Extra Noodles',
   '加脆':   'Extra Crispy', '全熟': 'Well Done',
 }
 

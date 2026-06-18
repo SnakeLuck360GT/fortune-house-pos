@@ -14,7 +14,7 @@ const STEPS = [
   { key: 'review', title: 'Review & add',        zh: '确认订单' },
 ]
 
-const newPerson = () => ({ mainId: null, sauceId: null, riceId: null })
+const newPerson = () => ({ mainId: null, sauceId: null, riceId: null, note: '' })
 
 // ─── Small building blocks ────────────────────────────────────────────────────
 function OptionCard({ selected, disabled, onClick, zh, en, tag, badge }) {
@@ -111,6 +111,15 @@ function PersonCard({ index, person, onChange }) {
           </div>
         </>
       )}
+
+      <div className="so-person__label">Note 备注</div>
+      <input
+        className="so-note-input"
+        type="text"
+        value={person.note || ''}
+        onChange={e => onChange({ ...person, note: e.target.value })}
+        placeholder="optional · e.g. no MSG / 不加味精"
+      />
     </div>
   )
 }

@@ -1717,7 +1717,65 @@ mark {
 .note-modal {
   max-width: 520px !important;
   width: 100% !important;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
 }
+
+.note-modal__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin: 0 -4px;
+  padding: 0 4px 4px;
+}
+
+/* Collapsible note groups */
+.note-group { border-bottom: 1px solid var(--border-subtle); }
+
+.note-group__head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 2px;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+.note-group__head:hover { background: var(--bg-hover); }
+
+.note-group__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+}
+
+.note-group__count {
+  background: var(--accent-green);
+  color: #fff;
+  border-radius: 999px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: 11px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.note-group__chevron {
+  color: var(--text-muted);
+  font-size: 15px;
+  transition: transform var(--transition);
+}
+.note-group__chevron--open { transform: rotate(90deg); }
 
 .note-modal__section-label {
   font-size: 11px;
@@ -2514,6 +2572,17 @@ mark {
   font-weight: 800;
   color: var(--accent-gold);
 }
+
+.so-note-input {
+  width: 100%;
+  padding: 9px 11px;
+  font-size: 14px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  border: 1px solid var(--border-visible);
+  color: var(--text-primary);
+}
+.so-note-input::placeholder { color: var(--text-muted); }
 
 .so-banquet-incl {
   display: block;

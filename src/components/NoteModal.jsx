@@ -48,6 +48,24 @@ export default function NoteModal({ item, currentNote, currentNotePrice, onConfi
   const isZh = lang === 'zh'
 
   const { specific, universal } = getItemNotes(item)
+  const removeOpts = universal.filter(o => o.id.startsWith('no-'))
+  const extraOpts  = universal.filter(o => o.id.startsWith('extra-'))
+  const otherOpts  = universal.filter(o => !o.id.startsWith('no-') && !o.id.startsWith('extra-'))
+
+  const groups = [
+    { key: 'dish',   label: isZh ? '此菜品' : 'This dish', opts: specific },
+    { key: 'remove', label: isZh ? '去除'   : 'Remove',    opts: removeOpts },
+    { key: 'extra',  label: isZh ? '加量'   : 'Extra',     opts: extraOpts },
+    { key: 'other',  label: isZh ? '其他'   : 'Other',     opts: otherOpts },
+  ].filter(g => g.opts.length > 0)
+
+  // Start with "This dish" open, plus any group that already has a selected note
+  const [openGroups, setOpenGroups] = useState(() => ({
+    dish:   true,
+    remove: removeOpts.some(o => selected.includes(o.id)),
+    extra:  extraOpts.some(o => selected.includes(o.id)),
+    other:  otherOpts.some(o => selected.includes(o.id)),
+  }))
 
   function toggle(id) {
     setSelected(prev =>
@@ -85,38 +103,33 @@ export default function NoteModal({ item, currentNote, currentNotePrice, onConfi
             : `${count} modifier${count !== 1 ? 's' : ''} selected`}
         </p>
 
-        {specific.length > 0 && (
-          <>
-            <div className="note-modal__section-label">
-              {isZh ? '此菜品' : 'This dish'}
-            </div>
-            <div className="sharebox-drinks" style={{ marginBottom: 12 }}>
-              {specific.map(opt => (
-                <NoteButton
-                  key={opt.id}
-                  opt={opt}
-                  isSelected={selected.includes(opt.id)}
-                  isZh={isZh}
-                  onToggle={toggle}
-                />
-              ))}
-            </div>
-          </>
-        )}
-
-        <div className="note-modal__section-label">
-          {isZh ? '通用' : 'General'}
-        </div>
-        <div className="sharebox-drinks">
-          {universal.map(opt => (
-            <NoteButton
-              key={opt.id}
-              opt={opt}
-              isSelected={selected.includes(opt.id)}
-              isZh={isZh}
-              onToggle={toggle}
-            />
-          ))}
+        <div className="note-modal__scroll">
+          {groups.map(g => {
+            const selCount = g.opts.filter(o => selected.includes(o.id)).length
+            const isOpen = !!openGroups[g.key]
+            return (
+              <div key={g.key} className="note-group">
+                <button
+                  type="button"
+                  className="note-group__head"
+                  onClick={() => setOpenGroups(o => ({ ...o, [g.key]: !o[g.key] }))}
+                >
+                  <span className="note-group__title">
+                    {g.label}
+                    {selCount > 0 && <span className="note-group__count">{selCount}</span>}
+                  </span>
+                  <span className={`note-group__chevron${isOpen ? ' note-group__chevron--open' : ''}`}>▸</span>
+                </button>
+                {isOpen && (
+                  <div className="sharebox-drinks" style={{ marginBottom: 12 }}>
+                    {g.opts.map(opt => (
+                      <NoteButton key={opt.id} opt={opt} isSelected={selected.includes(opt.id)} isZh={isZh} onToggle={toggle} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
 
         {/* Custom free-text note with optional price */}

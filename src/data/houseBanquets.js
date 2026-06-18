@@ -108,6 +108,10 @@ export function buildBanquetItem({ banquet, people, persons }) {
     const main = byId(banquet.mains, p.mainId)
     zh.push(`第${i + 1}位: 汤=${soup?.zh ?? '?'} · ${main?.zh ?? '?'}`)
     en.push(`P${i + 1}: Soup=${soup?.en ?? '?'} · ${main?.en ?? '?'}`)
+    if (p.note?.trim()) {
+      zh.push(`  备注: ${p.note.trim()}`)
+      en.push(`  Note: ${p.note.trim()}`)
+    }
   })
 
   zh.push(`配${RICE_INCLUDED.zh}`)

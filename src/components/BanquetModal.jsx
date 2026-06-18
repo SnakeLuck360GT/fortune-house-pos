@@ -5,7 +5,7 @@ import {
   isBanquetPersonComplete, banquetSurcharge, buildBanquetItem,
 } from '../data/houseBanquets.js'
 
-const newPerson = () => ({ soupId: null, mainId: null })
+const newPerson = () => ({ soupId: null, mainId: null, note: '' })
 const CONFIRM_PRESSES = 3   // deliberate taps needed to add a paid duplicate main
 
 function OptionCard({ selected, disabled, confirming, onClick, zh, en, tag, badge, note }) {
@@ -105,6 +105,15 @@ function PersonCard({ index, person, banquet, othersMainIds = [], lowerMainIds =
           )
         })}
       </div>
+
+      <div className="so-person__label">Note 备注</div>
+      <input
+        className="so-note-input"
+        type="text"
+        value={person.note || ''}
+        onChange={e => onChange({ ...person, note: e.target.value })}
+        placeholder="optional · e.g. no MSG / 不加味精"
+      />
     </div>
   )
 }
