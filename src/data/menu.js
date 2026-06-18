@@ -91,14 +91,20 @@ export const menu = [
     ],
   },
   {
-    category: "Chef's Specials",
-    categoryZh: '厨师精选',
+    category: "Chef's Specials Starters",
+    categoryZh: '厨师精选 · 前菜',
     items: [
       { id: 'cs01', nameEn: 'Deep Fried King Prawn Dumplings',           nameZh: '明虾角',           price: 8.50 },
       { id: 'cs02', nameEn: 'Nutty Cumin Chicken Skewers',               nameZh: '孜然鸡串',     price: 7.70 },
       { id: 'cs03', nameEn: 'Dry Spice Shredded Chicken (starter)',      nameZh: '避风塘鸡丝',         price: 10.50 },
       { id: 'cs04', nameEn: 'Shelter Harbour Soft Shell Crab',           nameZh: '避风塘软壳蟹',       price: 12.00 },
       { id: 'cs05', nameEn: 'Dry Spice Shredded Fillet Steak',           nameZh: '避风塘牛柳丝',         price: 13.00 },
+    ],
+  },
+  {
+    category: "Chef's Specials Mains",
+    categoryZh: '厨师精选 · 主菜',
+    items: [
       { id: 'cs06', nameEn: 'Crispy Lamb Brisket in Curry Sauce',        nameZh: '咖喱羊腩',     price: 12.00 },
       { id: 'cs07', nameEn: 'Sliced Chicken with Yellowbean Sauce',      nameZh: '黄豆酱腰果鸡',         price: 10.50 },
       { id: 'cs08', nameEn: 'Sautéed Fillet Steak in Korean Galbi Sauce', nameZh: '韩式牛柳粒',   price: 13.00 },
