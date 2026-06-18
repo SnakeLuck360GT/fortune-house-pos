@@ -22,6 +22,15 @@ export const NOTE_OPTIONS = [
 ]
 
 const BY_ID = Object.fromEntries(NOTE_OPTIONS.map(o => [o.id, o]))
+const ZH_EN = Object.fromEntries(NOTE_OPTIONS.map(o => [o.zh, o.en]))
+
+// Convert a comma-joined Chinese note (as stored by NoteModal) to English,
+// keeping any custom free-text parts unchanged.
+export function translateNoteToEn(note) {
+  if (!note) return ''
+  return note.split(/[,，]\s*/).map(s => s.trim()).filter(Boolean)
+    .map(s => ZH_EN[s] || s).join(', ')
+}
 
 // Notes that are always shown regardless of dish
 const UNIVERSAL_IDS = [

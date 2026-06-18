@@ -2,6 +2,8 @@
 // crispy duck are included for the table; each person chooses one soup and one
 // main course. Everything is served with Young Chow Fried Rice.
 
+import { translateNoteToEn } from './noteOptions.js'
+
 export const MIN_PEOPLE = 2
 
 // Soup choice offered with every banquet
@@ -110,7 +112,7 @@ export function buildBanquetItem({ banquet, people, persons }) {
     en.push(`P${i + 1}: Soup=${soup?.en ?? '?'} · ${main?.en ?? '?'}`)
     if (p.note?.trim()) {
       zh.push(`  备注: ${p.note.trim()}`)
-      en.push(`  Note: ${p.note.trim()}`)
+      en.push(`  Note: ${translateNoteToEn(p.note.trim())}`)
     }
   })
 

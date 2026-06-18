@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { formatPrice } from '../utils/receiptFormatter.js'
+import NoteModal from './NoteModal.jsx'
 import {
   MIN_PEOPLE, BANQUETS, RICE_INCLUDED, DUPLICATE_MAIN_FEE, FREE_DUPLICATE_PEOPLE, banquetById,
   isBanquetPersonComplete, banquetSurcharge, buildBanquetItem,
@@ -39,6 +40,7 @@ function Stepper({ value, min, onChange }) {
 function PersonCard({ index, person, banquet, othersMainIds = [], lowerMainIds = [], chargeDuplicates = true, onChange }) {
   const done = isBanquetPersonComplete(person)
   const [pending, setPending] = useState({ mainId: null, presses: 0 })
+  const [noteOpen, setNoteOpen] = useState(false)
 
   function pickMain(m) {
     if (person.mainId === m.id) return                       // already chosen — no-op
@@ -107,13 +109,22 @@ function PersonCard({ index, person, banquet, othersMainIds = [], lowerMainIds =
       </div>
 
       <div className="so-person__label">Note 备注</div>
-      <input
-        className="so-note-input"
-        type="text"
-        value={person.note || ''}
-        onChange={e => onChange({ ...person, note: e.target.value })}
-        placeholder="optional · e.g. no MSG / 不加味精"
-      />
+      <button
+        type="button"
+        className={`so-note-btn${person.note ? ' so-note-btn--set' : ''}`}
+        onClick={() => setNoteOpen(true)}
+      >
+        {person.note ? person.note : '＋ Add note 添加备注'}
+      </button>
+
+      {noteOpen && (
+        <NoteModal
+          item={{}}
+          currentNote={person.note}
+          onConfirm={(note) => { onChange({ ...person, note }); setNoteOpen(false) }}
+          onCancel={() => setNoteOpen(false)}
+        />
+      )}
     </div>
   )
 }

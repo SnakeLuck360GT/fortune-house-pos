@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { formatPrice } from '../utils/receiptFormatter.js'
+import NoteModal from './NoteModal.jsx'
 import {
   MIN_PEOPLE, PRICE_PER_PERSON, STARTER,
   MAINS, SAUCES, RICE_OPTIONS, DUCK_OPTIONS, SOUPS, SOUP_PRICE,
@@ -48,6 +49,7 @@ function PersonCard({ index, person, onChange }) {
   const forced    = main?.forcedSauceId
   const sauceId   = effectiveSauceId(main, person.sauceId)
   const complete  = isPersonComplete(person)
+  const [noteOpen, setNoteOpen] = useState(false)
 
   function pickMain(m) {
     onChange({ ...person, mainId: m.id, sauceId: m.forcedSauceId || person.sauceId })
@@ -113,13 +115,22 @@ function PersonCard({ index, person, onChange }) {
       )}
 
       <div className="so-person__label">Note 备注</div>
-      <input
-        className="so-note-input"
-        type="text"
-        value={person.note || ''}
-        onChange={e => onChange({ ...person, note: e.target.value })}
-        placeholder="optional · e.g. no MSG / 不加味精"
-      />
+      <button
+        type="button"
+        className={`so-note-btn${person.note ? ' so-note-btn--set' : ''}`}
+        onClick={() => setNoteOpen(true)}
+      >
+        {person.note ? person.note : '＋ Add note 添加备注'}
+      </button>
+
+      {noteOpen && (
+        <NoteModal
+          item={{}}
+          currentNote={person.note}
+          onConfirm={(note) => { onChange({ ...person, note }); setNoteOpen(false) }}
+          onCancel={() => setNoteOpen(false)}
+        />
+      )}
     </div>
   )
 }

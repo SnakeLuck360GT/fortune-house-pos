@@ -4,6 +4,8 @@
 // Each main comes with a choice of sauce and a choice of rice/chips.
 // Optional add-ons: aromatic crispy duck (¼ / ½) and soups (£3 each).
 
+import { translateNoteToEn } from './noteOptions.js'
+
 export const OFFER_ID         = 'so01'
 export const PRICE_PER_PERSON = 12
 export const MIN_PEOPLE       = 2
@@ -98,7 +100,7 @@ export function buildOfferItems({ people, persons, duckId, soups }) {
     en.push(`P${i + 1}: ${stripParen(main?.en ?? '?')} · ${sauce?.en ?? '?'} · ${rice?.en ?? '?'}`)
     if (p.note?.trim()) {
       zh.push(`  备注: ${p.note.trim()}`)
-      en.push(`  Note: ${p.note.trim()}`)
+      en.push(`  Note: ${translateNoteToEn(p.note.trim())}`)
     }
   })
   const details = [
