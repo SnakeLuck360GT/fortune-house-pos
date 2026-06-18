@@ -2,9 +2,11 @@ import { useState, useEffect, useRef } from 'react'
 import HomeButton from '../components/HomeButton.jsx'
 import { fetchPostcodeInfo, fetchDriveMinutes, looksLikePostcode, formatPostcode } from '../utils/geocoder.js'
 import { getDeliveryZone } from '../utils/deliveryZones.js'
+import { isValidUkPhone } from '../utils/phone.js'
 
 export default function DeliveryDetails({ onNavigate, onConfirm, t }) {
   const [name,         setName]         = useState('')
+  const [phone,        setPhone]        = useState('')
   const [postcode,     setPostcode]     = useState('')
   const [postcodeInfo, setPostcodeInfo] = useState(null)
   const [houseNumber,  setHouseNumber]  = useState('')
@@ -64,12 +66,14 @@ export default function DeliveryDetails({ onNavigate, onConfirm, t }) {
 
   const needsConfirm = !!zone?.outOfArea
   const outAreaConfirmed = !needsConfirm || confirmText.trim().toLowerCase() === 'confirm'
-  const canStart = !!postcode.trim() && outAreaConfirmed   // name is optional
+  const phoneOk = !phone.trim() || isValidUkPhone(phone)   // optional, but valid if entered
+  const canStart = !!postcode.trim() && outAreaConfirmed && phoneOk   // name is optional
 
   function handleConfirm() {
     if (!canStart) return
     onConfirm({
       customerName: name.trim(),
+      phone:        phone.trim(),
       address:      fullAddress,
       postcode:     pc,
       deliveryFee:  zone?.fee ?? 4.00,
@@ -99,6 +103,22 @@ export default function DeliveryDetails({ onNavigate, onConfirm, t }) {
             placeholder="e.g. John Smith"
             autoFocus
           />
+        </div>
+
+        <div className="delivery-field">
+          <label>Phone <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
+          <input
+            type="tel"
+            inputMode="tel"
+            value={phone}
+            onChange={e => setPhone(e.target.value)}
+            placeholder="e.g. 07700 900123"
+          />
+          {phone.trim() && (
+            phoneOk
+              ? <div style={{ fontSize: 13, color: '#4ade80', marginTop: 4 }}>✓ Looks valid</div>
+              : <div style={{ fontSize: 13, color: 'var(--danger)', marginTop: 4 }}>✗ Check the number — doesn't look like a UK phone</div>
+          )}
         </div>
 
         <div className="delivery-field">

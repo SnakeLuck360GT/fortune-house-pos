@@ -116,7 +116,7 @@ function parseNoteLines(note) {
 // ─── Receipt builder ─────────────────────────────────────────────────────────
 function buildReceiptBuffers(job) {
   const { items, total, tableNumber, discount, deliveryFee, orderId, timestamp,
-          orderMode, deliveryInfo, lang = 'en' } = job
+          orderMode, deliveryInfo, phone, lang = 'en' } = job
   const ts = timestamp ? new Date(timestamp) : new Date()
   const dateStr = ts.toLocaleDateString('en-GB')
   const timeStr = ts.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
@@ -148,9 +148,14 @@ function buildReceiptBuffers(job) {
   // Delivery customer info
   if (isDelivery && deliveryInfo) {
     if (deliveryInfo.customerName) chunks.push(encodeText(`${deliveryInfo.customerName}\n`))
-    if (deliveryInfo.phone)        chunks.push(encodeText(`${deliveryInfo.phone}\n`))
     if (deliveryInfo.address)      chunks.push(encodeText(`${deliveryInfo.address}\n`))
     if (deliveryInfo.driveMinutes) chunks.push(encodeText(`~${deliveryInfo.driveMinutes} min\n`))
+  }
+
+  // Customer phone (takeaway + delivery)
+  const tel = phone || deliveryInfo?.phone
+  if (tel) {
+    chunks.push(CMD_BOLD_ON, encodeText(`Tel: ${tel}\n`), CMD_BOLD_OFF)
   }
 
   // Estimated ready / delivery time

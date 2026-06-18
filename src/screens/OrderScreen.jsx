@@ -24,6 +24,7 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
   const [toast,        setToast]        = useState(null)
   const [shareBoxItem, setShareBoxItem] = useState(null)
   const [drinkItem,    setDrinkItem]    = useState(null)
+  const [takeawayPhone, setTakeawayPhone] = useState('')
   const [offerOpen,    setOfferOpen]    = useState(false)
   const [banquetOpen,  setBanquetOpen]  = useState(false)
   const [houseDish,    setHouseDish]    = useState(null)
@@ -92,6 +93,8 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
     setDrinkItem(null)
   }
 
+  const effectivePhone = (orderMode === 'delivery' ? deliveryInfo?.phone : takeawayPhone) || ''
+
   async function handlePrint() {
     if (order.items.length === 0) return
     const apiBase = settings?.printerUrl?.trim() || ''
@@ -99,6 +102,7 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
       orderId:     `ORD-${Date.now()}`,
       orderMode:   orderMode || 'takeaway',
       deliveryInfo: orderMode === 'delivery' ? deliveryInfo : null,
+      phone:       effectivePhone.trim(),
       items:       order.items,
       total:       order.total,
       discount:    order.discount,
@@ -260,6 +264,8 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
         t={t}
         mobileActive={isOrder}
         tableNumber={tableNumber}
+        phone={effectivePhone}
+        onSetPhone={setTakeawayPhone}
       />
 
       {shareBoxItem && (
