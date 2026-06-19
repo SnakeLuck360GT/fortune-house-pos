@@ -1990,8 +1990,8 @@ mark {
 }
 .rp-zh__qty {
   font-size: 17px;
-  font-weight: 600;
-  opacity: 0.6;
+  font-weight: 700;
+  opacity: 0.9;
   margin-left: 4px;
 }
 
@@ -2694,6 +2694,11 @@ mark {
   line-height: 1.35;
 }
 .rp-detail-zh + .rp-detail-block { margin-top: 10px; }
+.rp-detail-header {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  margin-top: 10px;
+}
 
 .rp-eta {
   text-align: center;

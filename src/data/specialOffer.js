@@ -66,6 +66,17 @@ export const SOUPS = [
 
 const byId = (list, id) => list.find(x => x.id === id)
 
+// Collapse repeated identical lines into "text ×n" (original order preserved).
+function tally(list) {
+  const order = []
+  const counts = new Map()
+  for (const t of list) {
+    if (!counts.has(t)) order.push(t)
+    counts.set(t, (counts.get(t) || 0) + 1)
+  }
+  return order.map(t => (counts.get(t) > 1 ? `${t} ×${counts.get(t)}` : t))
+}
+
 // Resolve the sauce that applies to a person's main (honours forcedSauceId).
 export function effectiveSauceId(main, chosenSauceId) {
   if (!main) return chosenSauceId
@@ -89,23 +100,30 @@ export function buildOfferItems({ people, persons, duckId, soups }) {
   // Per-person breakdown for the kitchen ticket. Built as two blocks: the
   // Chinese block (rendered large — the kitchen reads Chinese) comes first,
   // then the English block (small) beneath. Each detail carries { text, big }.
+  // Trimmed kitchen ticket: grouped Mains (meat · sauce per person) then the
+  // Side dish for each person. Starter / price recap omitted to cut clutter;
+  // repeated choices collapse into "… ×n".
   const stripParen = s => s.replace(/\s*\(.*\)\s*/, '')
-  const zh = [`${people}人 · 每位 £${PRICE_PER_PERSON}`, `前菜: ${STARTER.zh}`]
-  const en = [`${people} people · £${PRICE_PER_PERSON} per person`, `Starter: ${STARTER.en}`]
-  persons.forEach((p, i) => {
+  const mainZh = [], mainEn = [], sideZh = [], sideEn = []
+  persons.forEach((p) => {
     const main  = byId(MAINS, p.mainId)
     const sauce = byId(SAUCES, effectiveSauceId(main, p.sauceId))
     const rice  = byId(RICE_OPTIONS, p.riceId)
-    zh.push(`第${i + 1}位: ${main?.zh ?? '?'} · ${sauce?.zh ?? '?'} · ${rice?.zh ?? '?'}`)
-    en.push(`P${i + 1}: ${stripParen(main?.en ?? '?')} · ${sauce?.en ?? '?'} · ${rice?.en ?? '?'}`)
-    if (p.note?.trim()) {
-      zh.push(`  备注: ${p.note.trim()}`)
-      en.push(`  Note: ${translateNoteToEn(p.note.trim())}`)
-    }
+    const note  = p.note?.trim()
+    mainZh.push(`${main?.zh ?? '?'} · ${sauce?.zh ?? '?'}${note ? ` · 备注: ${note}` : ''}`)
+    mainEn.push(`${stripParen(main?.en ?? '?')} · ${sauce?.en ?? '?'}${note ? ` · Note: ${translateNoteToEn(note)}` : ''}`)
+    sideZh.push(rice?.zh ?? '?')
+    sideEn.push(stripParen(rice?.en ?? '?'))
   })
   const details = [
-    ...zh.map(text => ({ text, big: true })),
-    ...en.map(text => ({ text, big: false })),
+    { text: '主菜:', big: true, header: true },
+    ...tally(mainZh).map(text => ({ text: `  ${text}`, big: true })),
+    { text: '配菜:', big: true, header: true },
+    ...tally(sideZh).map(text => ({ text: `  ${text}`, big: true })),
+    { text: 'Mains:', big: false, header: true },
+    ...tally(mainEn).map(text => ({ text: `  ${text}`, big: false })),
+    { text: 'Side dish:', big: false, header: true },
+    ...tally(sideEn).map(text => ({ text: `  ${text}`, big: false })),
   ]
 
   const sideExtras = persons.reduce((s, p) => s + (byId(RICE_OPTIONS, p.riceId)?.extra || 0), 0)

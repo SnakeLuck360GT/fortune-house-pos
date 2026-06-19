@@ -129,16 +129,19 @@ function PersonCard({ index, person, banquet, othersMainIds = [], lowerMainIds =
   )
 }
 
-export default function BanquetModal({ initial, onConfirm, onCancel }) {
-  const [stepIdx, setStepIdx]   = useState(initial?.banquetId ? 1 : 0)   // skip banquet choice when editing
-  const [banquetId, setBanquetId] = useState(initial?.banquetId || null)
+export default function BanquetModal({ fixedBanquetId, initial, onConfirm, onCancel }) {
+  // When the trigger is a specific banquet button, lock to it and drop the
+  // "choose a banquet" step entirely.
+  const FIXED = !!fixedBanquetId
+  const [banquetId, setBanquetId] = useState(fixedBanquetId || initial?.banquetId || null)
+  const [stepIdx, setStepIdx]   = useState(FIXED ? 0 : (initial?.banquetId ? 1 : 0))   // skip banquet choice when fixed/editing
   const [people,  setPeople]    = useState(initial?.people || MIN_PEOPLE)
   const [persons, setPersons]   = useState(() =>
     initial?.persons ? initial.persons.map(p => ({ ...p })) : Array.from({ length: MIN_PEOPLE }, newPerson)
   )
 
   const banquet = banquetById(banquetId)
-  const STEPS = ['banquet', 'people', 'mains', 'review']
+  const STEPS = FIXED ? ['people', 'mains', 'review'] : ['banquet', 'people', 'mains', 'review']
   const stepKey = STEPS[stepIdx]
 
   useEffect(() => {
@@ -175,7 +178,7 @@ export default function BanquetModal({ initial, onConfirm, onCancel }) {
       <div className="modal special-offer-modal" onClick={e => e.stopPropagation()}>
         <div className="so-header">
           <div>
-            <h2 style={{ margin: 0 }}>富贵宴席 <span className="so-header__en">House Banquet</span></h2>
+            <h2 style={{ margin: 0 }}>{banquet ? banquet.zh : '富贵宴席'} <span className="so-header__en">{banquet ? banquet.en : 'House Banquet'}</span></h2>
             <p className="so-header__step">Step {stepIdx + 1} of {STEPS.length} · {stepTitle}</p>
           </div>
           <div className="so-header__total">

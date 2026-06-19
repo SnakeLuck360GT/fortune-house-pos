@@ -29,11 +29,11 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
   const [platterItem, setPlatterItem]   = useState(null)
   const [duckItem,    setDuckItem]      = useState(null)
   const [offerOpen,    setOfferOpen]    = useState(false)
-  const [banquetOpen,  setBanquetOpen]  = useState(false)
+  const [banquetItem,  setBanquetItem]  = useState(null)
   const [houseDish,    setHouseDish]    = useState(null)
   // Saved selections for the editable set-menu triggers (so re-pressing edits)
   const [offerState,    setOfferState]    = useState(null)
-  const [banquetState,  setBanquetState]  = useState(null)
+  const [banquetStates, setBanquetStates] = useState({})
   const [platterStates, setPlatterStates] = useState({})
 
   const displayLang = settings?.displayLang || 'both'
@@ -53,7 +53,7 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
 
   const handleAddItem = useCallback((item) => {
     if (item.isOffer)     { setOfferOpen(true);    return }
-    if (item.isBanquet)   { setBanquetOpen(true);  return }
+    if (item.isBanquet)   { setBanquetItem(item);  return }
     if (item.isHouseDish) { setHouseDish(item);    return }
     if (item.isPlatter)   { setPlatterItem(item);  return }
     if (item.isDuck)      { setDuckItem(item);     return }
@@ -64,7 +64,7 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
 
   const handleSearchSelect = useCallback((item) => {
     if (item.isOffer)     { setOfferOpen(true);    menu.clearSearch(); return }
-    if (item.isBanquet)   { setBanquetOpen(true);  menu.clearSearch(); return }
+    if (item.isBanquet)   { setBanquetItem(item);  menu.clearSearch(); return }
     if (item.isHouseDish) { setHouseDish(item);    menu.clearSearch(); return }
     if (item.isPlatter)   { setPlatterItem(item);  menu.clearSearch(); return }
     if (item.isDuck)      { setDuckItem(item);     menu.clearSearch(); return }
@@ -78,13 +78,13 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
   const groupPeople = (g) => order.items.find(i => i.group === g)?.people || 0
   const badgeFor = (item) =>
     item.isOffer   ? groupPeople('so01')   :
-    item.isBanquet ? groupPeople('hb01')   :
+    item.isBanquet ? groupPeople(item.id)  :
     item.isPlatter ? groupPeople(item.id)  :
     order.getQuantityInOrder(item.id)
 
   function resetInstances() {
     setOfferState(null)
-    setBanquetState(null)
+    setBanquetStates({})
     setPlatterStates({})
   }
 
@@ -119,11 +119,12 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
     showToast('Special offer saved', 'success')
   }
 
-  function handleBanquetConfirm(banquetItem, meta) {
-    order.removeGroup('hb01')
-    order.addItem({ ...banquetItem, group: 'hb01', people: meta.people })
-    setBanquetState(meta)
-    setBanquetOpen(false)
+  function handleBanquetConfirm(line, meta) {
+    const g = banquetItem.id
+    order.removeGroup(g)
+    order.addItem({ ...line, group: g, people: meta.people })
+    setBanquetStates(s => ({ ...s, [g]: meta }))
+    setBanquetItem(null)
     setActiveTab('order')
     showToast('Banquet saved', 'success')
   }
@@ -346,11 +347,12 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
         />
       )}
 
-      {banquetOpen && (
+      {banquetItem && (
         <BanquetModal
-          initial={groupPeople('hb01') > 0 ? banquetState : null}
+          fixedBanquetId={banquetItem.banquetId}
+          initial={groupPeople(banquetItem.id) > 0 ? banquetStates[banquetItem.id] : null}
           onConfirm={handleBanquetConfirm}
-          onCancel={() => setBanquetOpen(false)}
+          onCancel={() => setBanquetItem(null)}
         />
       )}
 

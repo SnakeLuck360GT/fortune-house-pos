@@ -15,8 +15,8 @@ const BANQUET_SOUPS = [
 export const BANQUETS = [
   {
     id: 'imperial',
-    en: 'Imperial Banquet',
-    zh: '帝王宴',
+    en: 'Banquet B',
+    zh: 'B餐',
     pricePerPerson: 25.50,
     // Shared, included courses (display + printed on the ticket)
     included: [
@@ -39,8 +39,8 @@ export const BANQUETS = [
   },
   {
     id: 'peking',
-    en: 'Peking Banquet',
-    zh: '北京宴',
+    en: 'Banquet A',
+    zh: 'A餐',
     pricePerPerson: 21.50,
     included: [
       { en: 'Prawn Crackers',           zh: '虾片' },
@@ -66,6 +66,17 @@ export const RICE_INCLUDED = { en: 'Young Chow Fried Rice', zh: '扬州炒饭' }
 
 export const banquetById = id => BANQUETS.find(b => b.id === id)
 const byId = (list, id) => list.find(x => x.id === id)
+
+// Collapse repeated identical lines into "text ×n" (original order preserved).
+function tally(list) {
+  const order = []
+  const counts = new Map()
+  for (const t of list) {
+    if (!counts.has(t)) order.push(t)
+    counts.set(t, (counts.get(t) || 0) + 1)
+  }
+  return order.map(t => (counts.get(t) > 1 ? `${t} ×${counts.get(t)}` : t))
+}
 
 // "Choose 1 different main per person if fewer than 5 people." So under 5
 // people a duplicate of someone else's main costs extra (chicken is exempt).
@@ -98,36 +109,37 @@ export function buildBanquetItem({ banquet, people, persons }) {
   const ts = Date.now()
 
   // Chinese block (large) then English block (small) — same shape the receipt
-  // renderers expect: { text, big }.
-  const zh = [`${banquet.zh} · ${people}人 · 每位 £${banquet.pricePerPerson.toFixed(2)}`]
-  const en = [`${banquet.en} · ${people} people · £${banquet.pricePerPerson.toFixed(2)} pp`]
-
-  zh.push(`包含: ${banquet.included.map(i => i.zh).join('、')}`)
-  en.push(`Included: ${banquet.included.map(i => i.en).join(', ')}`)
-
-  persons.forEach((p, i) => {
+  // renderers expect: { text, big, header }. Trimmed kitchen ticket: grouped
+  // Soups then Mains, with the included rice at the bottom. Repeated choices
+  // collapse into "… ×n".
+  const soupZh = [], soupEn = [], mainZh = [], mainEn = []
+  persons.forEach((p) => {
     const soup = byId(banquet.soups, p.soupId)
     const main = byId(banquet.mains, p.mainId)
-    zh.push(`第${i + 1}位: 汤=${soup?.zh ?? '?'} · ${main?.zh ?? '?'}`)
-    en.push(`P${i + 1}: Soup=${soup?.en ?? '?'} · ${main?.en ?? '?'}`)
-    if (p.note?.trim()) {
-      zh.push(`  备注: ${p.note.trim()}`)
-      en.push(`  Note: ${translateNoteToEn(p.note.trim())}`)
-    }
+    const note = p.note?.trim()
+    soupZh.push(soup?.zh ?? '?')
+    soupEn.push(soup?.en ?? '?')
+    mainZh.push(`${main?.zh ?? '?'}${note ? ` · 备注: ${note}` : ''}`)
+    mainEn.push(`${main?.en ?? '?'}${note ? ` · Note: ${translateNoteToEn(note)}` : ''}`)
   })
 
-  zh.push(`配${RICE_INCLUDED.zh}`)
-  en.push(`Served with ${RICE_INCLUDED.en}`)
-
   const surcharge = banquetSurcharge(banquet, persons)
-  if (surcharge > 0) {
-    zh.push(`重复主菜加收 +£${surcharge.toFixed(2)}`)
-    en.push(`Duplicate main(s) +£${surcharge.toFixed(2)}`)
-  }
+  const surZh = surcharge > 0 ? [{ text: `重复主菜加收 +£${surcharge.toFixed(2)}`, big: true }] : []
+  const surEn = surcharge > 0 ? [{ text: `Duplicate main(s) +£${surcharge.toFixed(2)}`, big: false }] : []
 
   const details = [
-    ...zh.map(text => ({ text, big: true })),
-    ...en.map(text => ({ text, big: false })),
+    { text: '汤:', big: true, header: true },
+    ...tally(soupZh).map(text => ({ text: `  ${text}`, big: true })),
+    { text: '主菜:', big: true, header: true },
+    ...tally(mainZh).map(text => ({ text: `  ${text}`, big: true })),
+    { text: `配${RICE_INCLUDED.zh}`, big: true },
+    ...surZh,
+    { text: 'Soups:', big: false, header: true },
+    ...tally(soupEn).map(text => ({ text: `  ${text}`, big: false })),
+    { text: 'Mains:', big: false, header: true },
+    ...tally(mainEn).map(text => ({ text: `  ${text}`, big: false })),
+    { text: `Served with ${RICE_INCLUDED.en}`, big: false },
+    ...surEn,
   ]
 
   return {

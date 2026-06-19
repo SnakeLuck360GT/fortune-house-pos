@@ -23,12 +23,22 @@ export const menu = [
     categoryZh: '富贵宴席',
     items: [
       {
-        id: 'hb01',
-        nameEn: 'House Banquet (Imperial / Peking)',
-        nameZh: '富贵套餐宴',
+        id: 'hb-peking',
+        nameEn: 'Banquet A',
+        nameZh: 'A餐',
         price: 21.50,
         isBanquet: true,
-        description: 'Set banquet (min 2) · Imperial £25.50pp or Peking £21.50pp · soups, appetisers, aromatic crispy duck & a main course each',
+        banquetId: 'peking',
+        description: 'Set banquet (min 2) · £21.50pp · soups, appetisers & a main course each, with Young Chow Fried Rice',
+      },
+      {
+        id: 'hb-imperial',
+        nameEn: 'Banquet B',
+        nameZh: 'B餐',
+        price: 25.50,
+        isBanquet: true,
+        banquetId: 'imperial',
+        description: 'Set banquet (min 2) · £25.50pp · soups, appetisers, aromatic crispy duck & a main course each, with Young Chow Fried Rice',
       },
     ],
   },
@@ -234,12 +244,12 @@ export const menu = [
   },
   {
     category: 'Share Box',
-    categoryZh: '分享套餐',
+    categoryZh: '椒盐盒',
     items: [
       {
         id: 'sb01',
         nameEn: 'Share Box (for 2+)',
-        nameZh: '分享套餐',
+        nameZh: '椒盐盒',
         price: 25.00,
         isShareBox: true,
         description: 'S&P Chips · Egg Fried Rice · Curry Sauce · S&P Chicken Wings · S&P Spare Ribs · S&P Chicken Pieces · Spring Rolls · S&P Shredded Chicken · 2 Soft Drink Cans',

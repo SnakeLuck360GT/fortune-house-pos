@@ -1,13 +1,17 @@
 import { useState } from 'react'
 
-const DRINKS = [
+// Bottles: only Coke & Diet Coke. Cans: also Fanta Orange.
+const CAN_DRINKS = [
   { id: 'coke',  nameEn: 'Coca-Cola'    },
   { id: 'diet',  nameEn: 'Diet Coke'    },
   { id: 'fanta', nameEn: 'Fanta Orange' },
 ]
+const BOTTLE_DRINKS = CAN_DRINKS.filter(d => d.id !== 'fanta')
 
 export default function DrinkPickerModal({ item, onConfirm, onCancel }) {
   const [selected, setSelected] = useState(null)
+  const isBottle = /bottle/i.test(item.nameEn)
+  const DRINKS = isBottle ? BOTTLE_DRINKS : CAN_DRINKS
 
   function handleConfirm() {
     const drink = DRINKS.find(d => d.id === selected)

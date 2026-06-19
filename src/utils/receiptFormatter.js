@@ -80,7 +80,7 @@ export function buildReceiptLines({ items, total, tableNumber, discount, deliver
     lines.push({ type: 'en', text: `${item.nameEn}  ×${item.quantity}` })
     if (Array.isArray(item.details)) {
       const isBlock = item.details.length > 2   // multi-line breakdown vs single zh/en pair
-      item.details.forEach(d => lines.push({ type: 'detail', text: d.text, big: d.big, block: isBlock }))
+      item.details.forEach(d => lines.push({ type: 'detail', text: d.text, big: d.big, block: isBlock, header: d.header }))
     }
     if (item.note) {
       parseNoteLines(item.note).forEach(({ prefix, zh, en }) => {
@@ -146,6 +146,8 @@ export function buildEscposReceipt({ items, total, tableNumber, discount, delive
   const CMD_NORMAL       = Buffer.from([0x1b, 0x21, 0x00])
   const CMD_BOLD_ON      = Buffer.from([0x1b, 0x45, 0x01])
   const CMD_BOLD_OFF     = Buffer.from([0x1b, 0x45, 0x00])
+  const CMD_ULINE_ON     = Buffer.from([0x1b, 0x2d, 0x01])
+  const CMD_ULINE_OFF    = Buffer.from([0x1b, 0x2d, 0x00])
   const CMD_CUT          = Buffer.from([0x1d, 0x56, 0x41, 0x00])
 
   const enc = s => Buffer.from(s, 'utf8')
@@ -177,10 +179,12 @@ export function buildEscposReceipt({ items, total, tableNumber, discount, delive
     if (Array.isArray(item.details)) {
       const isBlock = item.details.length > 2
       let prevBig = null
-      item.details.forEach(d => {
+      item.details.forEach((d, di) => {
         if (prevBig === true && !d.big && isBlock) chunks.push(lf(1))   // gap between zh/en blocks
-        if (d.big) chunks.push(CMD_DOUBLE, enc(`${d.text}\n`), CMD_NORMAL)
-        else       chunks.push(enc(`  ${d.text}\n`))
+        if (d.header && di > 0 && prevBig === !!d.big) chunks.push(lf(1)) // gap before a group header
+        const u = d.header
+        if (d.big) chunks.push(CMD_DOUBLE, ...(u ? [CMD_ULINE_ON] : []), enc(`${d.text}\n`), ...(u ? [CMD_ULINE_OFF] : []), CMD_NORMAL)
+        else       chunks.push(...(u ? [CMD_ULINE_ON] : []), enc(`  ${d.text}\n`), ...(u ? [CMD_ULINE_OFF] : []))
         prevBig = !!d.big
       })
     }
