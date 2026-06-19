@@ -151,7 +151,6 @@ function buildReceiptBuffers(job) {
   // Restaurant name — bold, double size (clear without squishing)
   chunks.push(CMD_BOLD_ON, CMD_DOUBLE_SIZE)
   chunks.push(encodeText('Fortune House\n'))
-  chunks.push(encodeText('福运楼\n'))
   chunks.push(CMD_NORMAL_SIZE, CMD_BOLD_OFF)
 
   chunks.push(encodeText(`${dateStr}  ${timeStr}\n`))

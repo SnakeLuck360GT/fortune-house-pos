@@ -8,8 +8,11 @@ export const NOTE_OPTIONS = [
   { id: 'no-sugar',        zh: '不加糖',   en: 'No Sugar' },
   { id: 'no-msg',          zh: '不加味精', en: 'No MSG' },
   { id: 'no-salt',         zh: '不加盐',   en: 'No Salt' },
-  { id: 'no-egg',          zh: '不加蛋',   en: 'No Egg' },
+  { id: 'no-egg',          zh: '免蛋',     en: 'No Egg' },
   { id: 'no-pork',         zh: '不加猪肉', en: 'No Pork' },
+  { id: 'no-beansprout',   zh: '免芽菜',   en: 'No Beansprout' },
+  { id: 'extra-cashew',    zh: '加腰果',   en: 'Extra Cashew Nut' },
+  { id: 'less-salt',       zh: '少盐',     en: 'Less Salt' },
   { id: 'extra-sauce',     zh: '多加酱',   en: 'Extra Sauce' },
   { id: 'extra-spicy',     zh: '加辣',     en: 'Extra Spicy' },
   { id: 'extra-chilli',    zh: '多加辣椒', en: 'Extra Chilli' },
@@ -34,9 +37,10 @@ export function translateNoteToEn(note) {
 
 // Notes that are always shown regardless of dish
 const UNIVERSAL_IDS = [
-  'no-msg', 'no-salt',
+  'no-msg', 'no-salt', 'less-salt',
   'no-vegetables', 'no-onion', 'no-mushrooms', 'no-garlic', 'no-sugar', 'no-chilli',
-  'extra-spicy', 'extra-chilli', 'extra-mushrooms', 'extra-vegetables', 'extra-sauce',
+  'no-beansprout',
+  'extra-spicy', 'extra-chilli', 'extra-mushrooms', 'extra-vegetables', 'extra-sauce', 'extra-cashew',
   'well-done',
 ]
 

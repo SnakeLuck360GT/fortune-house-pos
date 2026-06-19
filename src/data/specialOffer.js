@@ -44,7 +44,7 @@ export const RICE_OPTIONS = [
   { id: 'boiled',     en: 'Boiled Rice',         zh: '白饭' },
   { id: 'eggfried',   en: 'Egg Fried Rice',      zh: '蛋炒饭' },
   { id: 'chips',      en: 'Chips',               zh: '薯条' },
-  { id: 'softnoodle', en: 'Soft Noodle',         zh: '软面',     extra: 1.50 },
+  { id: 'softnoodle', en: 'Plain Noodles',       zh: '净面',     extra: 1.50 },
   { id: 'spchips',    en: 'Salt & Pepper Chips', zh: '椒盐薯条', extra: 1.50 },
 ]
 

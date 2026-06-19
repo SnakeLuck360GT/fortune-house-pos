@@ -56,7 +56,6 @@ export function buildReceiptLines({ items, total, tableNumber, discount, deliver
 
   lines.push({ type: 'sep-heavy' })
   lines.push({ type: 'center', text: RESTAURANT_NAME })
-  lines.push({ type: 'center', text: RESTAURANT_NAME_ZH })
   lines.push({ type: 'center', text: `${dateStr}  ${timeStr}` })
   if (tableNumber) lines.push({ type: 'center', text: `Table: ${tableNumber}` })
 
@@ -165,8 +164,7 @@ export function buildEscposReceipt({ items, total, tableNumber, discount, delive
   const chunks = []
 
   chunks.push(CMD_INIT, CMD_CENTER)
-  chunks.push(CMD_BOLD_ON, CMD_DOUBLE, enc(RESTAURANT_NAME + '\n'), CMD_NORMAL)
-  chunks.push(CMD_DOUBLE, enc(RESTAURANT_NAME_ZH + '\n'), CMD_NORMAL, CMD_BOLD_OFF)
+  chunks.push(CMD_BOLD_ON, CMD_DOUBLE, enc(RESTAURANT_NAME + '\n'), CMD_NORMAL, CMD_BOLD_OFF)
   chunks.push(enc(`${dateStr}  ${timeStr}\n`))
   if (tableNumber) chunks.push(enc(`Table: ${tableNumber}\n`))
   chunks.push(enc('================================\n\n'))
