@@ -76,11 +76,15 @@ export function buildReceiptLines({ items, total, tableNumber, discount, deliver
   items.forEach(item => {
     const price  = formatPrice((item.price + (item.notePrice || 0)) * item.quantity)
     const zhName = item.nameZh || item.nameEn
-    lines.push({ type: 'zh', text: zhName, price, quantity: item.quantity })
-    lines.push({ type: 'en', text: `${item.nameEn}  ×${item.quantity}` })
+    const qty    = item.peopleQty ?? item.quantity   // set-menus show "×people"
+    lines.push({ type: 'zh', text: zhName, price, quantity: qty })
+    lines.push({ type: 'en', text: `${item.nameEn}  ×${qty}` })
     if (Array.isArray(item.details)) {
       const isBlock = item.details.length > 2   // multi-line breakdown vs single zh/en pair
-      item.details.forEach(d => lines.push({ type: 'detail', text: d.text, big: d.big, block: isBlock, header: d.header }))
+      item.details.forEach(d => {
+        if (d.rule) { lines.push({ type: 'detail-rule' }); return }
+        lines.push({ type: 'detail', text: d.text, big: d.big, block: isBlock, header: d.header })
+      })
     }
     if (item.note) {
       parseNoteLines(item.note).forEach(({ prefix, zh, en }) => {
@@ -124,6 +128,7 @@ export function buildReceiptText({ items, total, tableNumber, discount, delivery
         case 'eta':         return center(l.text, LINE_WIDTH)
         case 'zh':          return pad(l.text, LINE_WIDTH - l.price.length) + l.price
         case 'en':          return `  ${l.text}`
+        case 'detail-rule': return '-'.repeat(LINE_WIDTH)
         case 'detail':      return `  ${l.text}`
         case 'note':
         case 'note-zh':     return `  ${l.text}`
@@ -170,16 +175,18 @@ export function buildEscposReceipt({ items, total, tableNumber, discount, delive
   items.forEach(item => {
     const price  = formatPrice((item.price + (item.notePrice || 0)) * item.quantity)
     const zhName = item.nameZh || item.nameEn
+    const qty    = item.peopleQty ?? item.quantity   // set-menus show "x people"
     // Chinese name — double height, price on same line
     chunks.push(CMD_DOUBLE)
     chunks.push(enc(pad(zhName.slice(0, 10), 10) + '  ' + price + '\n'))
     chunks.push(CMD_NORMAL)
     // English name + qty — normal size, indented
-    chunks.push(enc(`  ${item.nameEn}  x${item.quantity}\n`))
+    chunks.push(enc(`  ${item.nameEn}  x${qty}\n`))
     if (Array.isArray(item.details)) {
       const isBlock = item.details.length > 2
       let prevBig = null
       item.details.forEach((d, di) => {
+        if (d.rule) { chunks.push(enc('-'.repeat(LINE_WIDTH) + '\n')); return }
         if (prevBig === true && !d.big && isBlock) chunks.push(lf(1))   // gap between zh/en blocks
         if (d.header && di > 0 && prevBig === !!d.big) chunks.push(lf(1)) // gap before a group header
         const u = d.header

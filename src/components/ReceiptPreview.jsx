@@ -35,6 +35,8 @@ export default function ReceiptPreview({ items, total, tableNumber, discount, de
             )
           case 'en':
             return <div key={i} className="rp-en">{line.text}</div>
+          case 'detail-rule':
+            return <div key={i} className="rp-detail-rule" />
           case 'detail': {
             const cls = [
               line.big ? 'rp-detail-zh' : 'rp-detail-en',

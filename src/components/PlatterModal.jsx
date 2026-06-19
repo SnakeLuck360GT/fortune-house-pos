@@ -12,10 +12,11 @@ export default function PlatterModal({ item, initial, onConfirm, onCancel }) {
   function handleConfirm() {
     onConfirm({
       id:       `${item.id}-${Date.now()}`,
-      nameEn:   `${stripParen(item.nameEn)} (${people} ${people === 1 ? 'person' : 'people'})`,
-      nameZh:   `${stripParen(item.nameZh)} (${people}人)`,
+      nameEn:   stripParen(item.nameEn),
+      nameZh:   stripParen(item.nameZh),
       price:    total,
       category: 'A La Carte',
+      peopleQty: people,   // show "×people" on the receipt instead of the line quantity
     }, { people })
   }
 

@@ -1989,10 +1989,10 @@ mark {
   font-family: 'Noto Sans SC', sans-serif;
 }
 .rp-zh__qty {
-  font-size: 17px;
-  font-weight: 700;
+  font-size: 26px;
+  font-weight: 900;
   opacity: 0.9;
-  margin-left: 4px;
+  margin-left: 6px;
 }
 
 .rp-zh__price {
@@ -2698,6 +2698,11 @@ mark {
   text-decoration: underline;
   text-underline-offset: 3px;
   margin-top: 10px;
+}
+.rp-detail-rule {
+  border: none;
+  border-top: 1px solid #999;
+  margin: 8px 0;
 }
 
 .rp-eta {

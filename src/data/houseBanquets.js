@@ -18,6 +18,7 @@ export const BANQUETS = [
     en: 'Banquet B',
     zh: 'B餐',
     pricePerPerson: 25.50,
+    hasDuck: true,   // Banquet B includes aromatic crispy duck (shown on the ticket)
     // Shared, included courses (display + printed on the ticket)
     included: [
       { en: 'Prawn Crackers',            zh: '虾片' },
@@ -123,33 +124,46 @@ export function buildBanquetItem({ banquet, people, persons }) {
     mainEn.push(`${main?.en ?? '?'}${note ? ` · Note: ${translateNoteToEn(note)}` : ''}`)
   })
 
+  // Shared starters listed under Soups, after the per-person soup choices:
+  // a mixed appetiser platter, plus aromatic crispy duck on banquets that include it.
+  const starterZh = ['拼盘', ...(banquet.hasDuck ? ['鸭'] : [])]
+  const starterEn = ['Mix Platter', ...(banquet.hasDuck ? ['Duck'] : [])]
+
   const surcharge = banquetSurcharge(banquet, persons)
   const surZh = surcharge > 0 ? [{ text: `重复主菜加收 +£${surcharge.toFixed(2)}`, big: true }] : []
   const surEn = surcharge > 0 ? [{ text: `Duplicate main(s) +£${surcharge.toFixed(2)}`, big: false }] : []
 
+  // Each starter (platter, + duck on B) is fenced by a horizontal rule, so the
+  // Soups section reads:  soups ─ platter ─ duck ─ mains.
+  const RULE = { rule: true }
+  const starterZhBlock = [...starterZh.flatMap(text => [RULE, { text: `  ${text}`, big: true }]), RULE]
+  const starterEnBlock = [...starterEn.flatMap(text => [RULE, { text: `  ${text}`, big: false }]), RULE]
+
   const details = [
-    { text: `${people}人`, big: true },
     { text: '汤:', big: true, header: true },
     ...tally(soupZh).map(text => ({ text: `  ${text}`, big: true })),
+    ...starterZhBlock,
     { text: '主菜:', big: true, header: true },
     ...tally(mainZh).map(text => ({ text: `  ${text}`, big: true })),
-    { text: `配${RICE_INCLUDED.zh}`, big: true },
+    { text: `${RICE_INCLUDED.zh} ×${people}`, big: true },
     ...surZh,
     { text: 'Soups:', big: false, header: true },
     ...tally(soupEn).map(text => ({ text: `  ${text}`, big: false })),
+    ...starterEnBlock,
     { text: 'Mains:', big: false, header: true },
     ...tally(mainEn).map(text => ({ text: `  ${text}`, big: false })),
-    { text: `Served with ${RICE_INCLUDED.en}`, big: false },
+    { text: `${RICE_INCLUDED.en} ×${people}`, big: false },
     ...surEn,
   ]
 
   return {
     id:        `banquet-${banquet.id}-${ts}`,
-    nameEn:    `${banquet.en} (${people} ${people === 1 ? 'person' : 'people'})`,
+    nameEn:    banquet.en,
     nameZh:    banquet.zh,
     price:     people * banquet.pricePerPerson + surcharge,
     category:  'House Banquet',
     isOfferItem: true,
+    peopleQty: people,   // show "×people" on the receipt instead of the line quantity
     details,
   }
 }

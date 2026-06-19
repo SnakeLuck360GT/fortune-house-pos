@@ -116,7 +116,6 @@ export function buildOfferItems({ people, persons, duckId, soups }) {
     sideEn.push(stripParen(rice?.en ?? '?'))
   })
   const details = [
-    { text: `${people}人`, big: true },
     { text: '主菜:', big: true, header: true },
     ...tally(mainZh).map(text => ({ text: `  ${text}`, big: true })),
     { text: '配菜:', big: true, header: true },
@@ -131,11 +130,12 @@ export function buildOfferItems({ people, persons, duckId, soups }) {
 
   items.push({
     id:        `so-offer-${ts}`,
-    nameEn:    `Special Takeaway Offer (${people} ${people === 1 ? 'person' : 'people'})`,
+    nameEn:    'Special Takeaway Offer',
     nameZh:    '特价外卖套餐',
     price:     people * PRICE_PER_PERSON + sideExtras,
     category:  'Special Offer',
     isOfferItem: true,
+    peopleQty: people,   // show "×people" on the receipt instead of the line quantity
     details,
   })
 
