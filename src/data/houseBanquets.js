@@ -50,7 +50,7 @@ export const BANQUETS = [
       { en: 'BBQ (1 per head)',         zh: '骨 (每位一件)' },
       { en: 'Crispy Seaweed',           zh: '脆海带' },
       { en: 'Crispy Wonton',            zh: '炸云吞' },
-      { en: 'Sweet & Sour Dipping Sauce', zh: '甜酸汁' },
+      { en: 'Sweet & Sour Dipping Sauce', zh: '古老汁' },
     ],
     soups: BANQUET_SOUPS,
     mains: [
