@@ -128,6 +128,7 @@ export function buildBanquetItem({ banquet, people, persons }) {
   const surEn = surcharge > 0 ? [{ text: `Duplicate main(s) +£${surcharge.toFixed(2)}`, big: false }] : []
 
   const details = [
+    { text: `${people}人`, big: true },
     { text: '汤:', big: true, header: true },
     ...tally(soupZh).map(text => ({ text: `  ${text}`, big: true })),
     { text: '主菜:', big: true, header: true },

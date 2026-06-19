@@ -116,6 +116,7 @@ export function buildOfferItems({ people, persons, duckId, soups }) {
     sideEn.push(stripParen(rice?.en ?? '?'))
   })
   const details = [
+    { text: `${people}人`, big: true },
     { text: '主菜:', big: true, header: true },
     ...tally(mainZh).map(text => ({ text: `  ${text}`, big: true })),
     { text: '配菜:', big: true, header: true },
