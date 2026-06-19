@@ -2697,8 +2697,9 @@ mark {
 .rp-detail-header {
   text-decoration: underline;
   text-underline-offset: 3px;
-  margin-top: 10px;
 }
+/* Only the big (Chinese) block gets the group spacing; English stays compact */
+.rp-detail-zh.rp-detail-header { margin-top: 10px; }
 .rp-detail-rule {
   border: none;
   border-top: 1px solid #999;

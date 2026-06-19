@@ -133,11 +133,12 @@ export function buildBanquetItem({ banquet, people, persons }) {
   const surZh = surcharge > 0 ? [{ text: `重复主菜加收 +£${surcharge.toFixed(2)}`, big: true }] : []
   const surEn = surcharge > 0 ? [{ text: `Duplicate main(s) +£${surcharge.toFixed(2)}`, big: false }] : []
 
-  // Each starter (platter, + duck on B) is fenced by a horizontal rule, so the
-  // Soups section reads:  soups ─ platter ─ duck ─ mains.
+  // Big (Chinese) block: each starter (platter, + duck on B) is fenced by a
+  // horizontal rule, so the Soups section reads:  soups ─ platter ─ duck ─ mains.
+  // English block stays compact — plain lines, no rules.
   const RULE = { rule: true }
   const starterZhBlock = [...starterZh.flatMap(text => [RULE, { text: `  ${text}`, big: true }]), RULE]
-  const starterEnBlock = [...starterEn.flatMap(text => [RULE, { text: `  ${text}`, big: false }]), RULE]
+  const starterEnLines = starterEn.map(text => ({ text: `  ${text}`, big: false }))
 
   const details = [
     { text: '汤:', big: true, header: true },
@@ -149,7 +150,7 @@ export function buildBanquetItem({ banquet, people, persons }) {
     ...surZh,
     { text: 'Soups:', big: false, header: true },
     ...tally(soupEn).map(text => ({ text: `  ${text}`, big: false })),
-    ...starterEnBlock,
+    ...starterEnLines,
     { text: 'Mains:', big: false, header: true },
     ...tally(mainEn).map(text => ({ text: `  ${text}`, big: false })),
     { text: `${RICE_INCLUDED.en} ×${people}`, big: false },

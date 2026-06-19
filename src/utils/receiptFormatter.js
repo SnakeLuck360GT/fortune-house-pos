@@ -188,7 +188,7 @@ export function buildEscposReceipt({ items, total, tableNumber, discount, delive
       item.details.forEach((d, di) => {
         if (d.rule) { chunks.push(enc('-'.repeat(LINE_WIDTH) + '\n')); return }
         if (prevBig === true && !d.big && isBlock) chunks.push(lf(1))   // gap between zh/en blocks
-        if (d.header && di > 0 && prevBig === !!d.big) chunks.push(lf(1)) // gap before a group header
+        if (d.header && d.big && di > 0 && prevBig === !!d.big) chunks.push(lf(1)) // gap before a big group header (English stays compact)
         const u = d.header
         if (d.big) chunks.push(CMD_DOUBLE, ...(u ? [CMD_ULINE_ON] : []), enc(`${d.text}\n`), ...(u ? [CMD_ULINE_OFF] : []), CMD_NORMAL)
         else       chunks.push(...(u ? [CMD_ULINE_ON] : []), enc(`  ${d.text}\n`), ...(u ? [CMD_ULINE_OFF] : []))
