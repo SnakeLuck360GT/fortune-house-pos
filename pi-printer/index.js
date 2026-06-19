@@ -17,6 +17,7 @@ const API_BASE      = process.env.API_BASE || 'https://your-site.netlify.app'
 const POLL_MS       = parseInt(process.env.POLL_MS || '2000', 10)
 const PRINTER_IFACE = process.env.PRINTER_INTERFACE || '/dev/usb/lp0'
 const USE_GB2312    = process.env.USE_GB2312 === 'true'  // set true for GB2312 printers
+const RECEIPT_COPIES = Math.max(1, parseInt(process.env.RECEIPT_COPIES || '2', 10))  // copies per order
 const LINE_WIDTH    = 32
 
 // ─── Printer setup ──────────────────────────────────────────────────────────
@@ -352,13 +353,21 @@ async function printJob(job) {
     ? buildFloatBuffers(job)
     : buildReceiptBuffers({ ...job, lang: job.lang || 'en' })
 
+  // Daily summaries print once; order receipts print RECEIPT_COPIES times
+  // (e.g. one for the kitchen, one for the customer).
+  const copies = job.type === 'float' ? 1 : RECEIPT_COPIES
+
   // Use raw buffer mode — write directly to the printer interface
   const fs = require('fs')
-  const fd = fs.openSync(PRINTER_IFACE, 'w')
-  fs.writeSync(fd, buffer)
-  fs.closeSync(fd)
+  for (let i = 0; i < copies; i++) {
+    const fd = fs.openSync(PRINTER_IFACE, 'w')
+    fs.writeSync(fd, buffer)
+    fs.closeSync(fd)
+    // Let the cutter finish before sending the next copy
+    if (i < copies - 1) await new Promise(r => setTimeout(r, 600))
+  }
 
-  console.log(`[PRINT] Job ${job.jobId} printed successfully (${buffer.length} bytes)`)
+  console.log(`[PRINT] Job ${job.jobId} printed successfully (${copies}× ${buffer.length} bytes)`)
 }
 
 // ─── API helpers ─────────────────────────────────────────────────────────────
@@ -431,6 +440,7 @@ console.log('  Fortune House Printer Bridge — Starting')
 console.log(`  API:      ${API_BASE}`)
 console.log(`  Printer:  ${PRINTER_IFACE}`)
 console.log(`  Encoding: ${USE_GB2312 ? 'GB2312' : 'UTF-8'}`)
+console.log(`  Copies:   ${RECEIPT_COPIES} per order`)
 console.log(`  Poll:     every ${POLL_MS}ms`)
 console.log('===========================================')
 
