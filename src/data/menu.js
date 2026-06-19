@@ -96,7 +96,7 @@ export const menu = [
       { id: 'ap24', nameEn: 'Salt & Pepper King Prawn off the Shell',    nameZh: '椒盐去壳大虾',       price: 8.70 },
       { id: 'ap25', nameEn: 'Salt & Pepper Ribs',                        nameZh: '椒盐排骨',           price: 8.90 },
       { id: 'ap26', nameEn: 'Peking Ribs',                               nameZh: '京骨',           price: 8.90 },
-      { id: 'ap27', nameEn: 'Deep Fried BBQ Ribs',                       nameZh: '烤排骨',         price: 8.90 },
+      { id: 'ap27', nameEn: 'Deep Fried BBQ',                            nameZh: '骨',         price: 8.90 },
       { id: 'ap28', nameEn: 'Spare Ribs in OK Sauce',                    nameZh: 'OK排骨',           price: 8.90 },
     ],
   },

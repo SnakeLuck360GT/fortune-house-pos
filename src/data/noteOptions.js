@@ -39,7 +39,7 @@ export function translateNoteToEn(note) {
 const UNIVERSAL_IDS = [
   'no-msg', 'no-salt', 'less-salt',
   'no-vegetables', 'no-onion', 'no-mushrooms', 'no-garlic', 'no-sugar', 'no-chilli',
-  'no-beansprout',
+  'no-beansprout', 'no-egg',
   'extra-spicy', 'extra-chilli', 'extra-mushrooms', 'extra-vegetables', 'extra-sauce', 'extra-cashew',
   'well-done',
 ]
