@@ -193,23 +193,20 @@ function buildReceiptBuffers(job) {
     const zhName = item.nameZh || item.nameEn
     const qty    = item.peopleQty ?? item.quantity   // set-menus show "×people"
 
-    // Big Chinese line at double size (same as notes). Keep "×qty" beside the
-    // name only when it fits; for long names drop it to the English line so the
-    // double-size text never overruns the line and gets squished. Price is
-    // right-aligned, dropping to its own line if even the name fills the row.
-    const withQty = `${zhName} ×${qty}`
-    const big = colWidth(withQty) * 2 + colWidth(price) + 1 <= LINE_WIDTH ? withQty : zhName
-    if (colWidth(big) * 2 + colWidth(price) + 1 <= LINE_WIDTH) {
-      const spaces = LINE_WIDTH - colWidth(big) * 2 - colWidth(price)
-      chunks.push(CMD_DOUBLE_SIZE, encodeText(big))
-      chunks.push(CMD_NORMAL_SIZE, encodeText(' '.repeat(spaces) + price + '\n'))
+    // Item title — a PURE double-size line, so it prints at exactly the same
+    // size as the 汤:/主菜: lines and notes. (Putting the normal-size price on
+    // the same line made the printer condense/"squish" the title.)
+    chunks.push(CMD_DOUBLE_SIZE, encodeText(`${zhName} ×${qty}\n`), CMD_NORMAL_SIZE)
+
+    // English name + price on a normal-size line; price right-aligned, dropping
+    // to its own line only if the name is too long to share.
+    const en = `  ${item.nameEn} ×${qty}`
+    if (colWidth(en) + colWidth(price) + 1 <= LINE_WIDTH) {
+      chunks.push(encodeText(en + ' '.repeat(LINE_WIDTH - colWidth(en) - colWidth(price)) + price + '\n'))
     } else {
-      chunks.push(CMD_DOUBLE_SIZE, encodeText(big + '\n'), CMD_NORMAL_SIZE)
+      chunks.push(encodeText(en + '\n'))
       chunks.push(encodeText(' '.repeat(Math.max(1, LINE_WIDTH - colWidth(price))) + price + '\n'))
     }
-
-    // English name beneath — normal size, indented, with ×qty
-    chunks.push(encodeText(`  ${item.nameEn} ×${qty}\n`))
 
     // Set-meal breakdown: big Chinese block, compact English block, with
     // horizontal rules and underlined headers (identical to the preview).

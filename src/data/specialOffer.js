@@ -27,15 +27,15 @@ export const MAINS = [
 
 // Sauce / cooking style — one per main
 export const SAUCES = [
-  { id: 'cantonese',  en: 'Cantonese Sauce',              zh: '广式酱' },
-  { id: 'sweetsour',  en: 'Sweet & Sour Sauce',           zh: '糖醋酱' },
-  { id: 'szechuan',   en: 'Hot & Spicy Szechuan Sauce',   zh: '川式香辣酱', spicy: true },
+  { id: 'cantonese',  en: 'Cantonese Sauce',              zh: '中式' },
+  { id: 'sweetsour',  en: 'Sweet & Sour Sauce',           zh: '古老' },
+  { id: 'szechuan',   en: 'Hot & Spicy Szechuan Sauce',   zh: '四川', spicy: true },
   { id: 'curry',      en: 'Curry Sauce',                  zh: '咖喱酱',     spicy: true },
   { id: 'satay',      en: 'Satay Sauce',                  zh: '沙爹酱',     spicy: true },
   { id: 'thaired',    en: 'Thai Red Curry Sauce',         zh: '泰式红咖喱', spicy: true },
-  { id: 'blackbean',  en: 'Green Pepper & Black Bean',    zh: '青椒豉汁' },
+  { id: 'blackbean',  en: 'Green Pepper & Black Bean',    zh: '士召' },
   { id: 'blackpepper',en: 'Black Pepper Sauce',           zh: '黑椒酱' },
-  { id: 'mushroom',   en: 'Fresh Mushrooms',              zh: '鲜蘑菇' },
+  { id: 'mushroom',   en: 'Fresh Mushrooms',              zh: '毛菇' },
   { id: 'broccoli',   en: 'Chinese Leaves & Broccoli',    zh: '唐生菜西兰花' },
 ]
 
