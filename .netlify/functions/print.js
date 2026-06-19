@@ -31,7 +31,7 @@ export const handler = async (event) => {
 
   const {
     orderId, items, total, discount, deliveryFee, tableNumber, timestamp,
-    type, floatSummary, orderMode, deliveryInfo, lang,
+    type, floatSummary, orderMode, deliveryInfo, lang, customerName, phone,
   } = body
 
   if (!items || !Array.isArray(items) || items.length === 0) {
@@ -51,6 +51,8 @@ export const handler = async (event) => {
     timestamp: timestamp || Date.now(),
     orderMode: orderMode || 'takeaway',
     deliveryInfo: deliveryInfo || null,
+    customerName: customerName || '',
+    phone: phone || '',
     floatSummary: floatSummary || null,
     lang: lang || 'en',
     status: 'pending',

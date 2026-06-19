@@ -42,8 +42,11 @@ const GS  = '\x1d'
 const CMD_INIT          = Buffer.from([0x1b, 0x40])
 const CMD_ALIGN_CENTER  = Buffer.from([0x1b, 0x61, 0x01])
 const CMD_ALIGN_LEFT    = Buffer.from([0x1b, 0x61, 0x00])
-const CMD_DOUBLE_SIZE   = Buffer.from([0x1b, 0x21, 0x30])  // double width + height
-const CMD_NORMAL_SIZE   = Buffer.from([0x1b, 0x21, 0x00])
+// GS ! — character size (width/height magnification 1-8). Bigger than the old
+// ESC ! cap of 2×, so Chinese can be printed genuinely large.
+const szCmd = (w, h) => Buffer.from([0x1d, 0x21, (((w - 1) & 7) << 4) | ((h - 1) & 7)])
+const CMD_NORMAL_SIZE   = szCmd(1, 1)
+const CMD_DOUBLE_SIZE   = szCmd(2, 2)  // the size the notes print at — the size we want for Chinese
 const CMD_BOLD_ON       = Buffer.from([0x1b, 0x45, 0x01])
 const CMD_BOLD_OFF      = Buffer.from([0x1b, 0x45, 0x00])
 const CMD_INVERT_ON     = Buffer.from([0x1d, 0x42, 0x01])  // white on black
@@ -145,11 +148,9 @@ function buildReceiptBuffers(job) {
   if (USE_GB2312) chunks.push(CMD_CHINESE_ON)   // enable Chinese font mode on GB2312 printers
   chunks.push(CMD_ALIGN_CENTER)
 
-  // Restaurant name — double size
+  // Restaurant name — bold, double size (clear without squishing)
   chunks.push(CMD_BOLD_ON, CMD_DOUBLE_SIZE)
   chunks.push(encodeText('Fortune House\n'))
-  chunks.push(CMD_NORMAL_SIZE)
-  chunks.push(CMD_DOUBLE_SIZE)
   chunks.push(encodeText('福运楼\n'))
   chunks.push(CMD_NORMAL_SIZE, CMD_BOLD_OFF)
 
@@ -192,11 +193,20 @@ function buildReceiptBuffers(job) {
     const zhName = item.nameZh || item.nameEn
     const qty    = item.peopleQty ?? item.quantity   // set-menus show "×people"
 
-    // Big Chinese line: name ×qty (double size) ... price (normal, right-aligned)
-    const left    = `${zhName} ×${qty}`
-    const spaces  = Math.max(1, LINE_WIDTH - colWidth(left) * 2 - colWidth(price))
-    chunks.push(CMD_DOUBLE_SIZE, encodeText(left))
-    chunks.push(CMD_NORMAL_SIZE, encodeText(' '.repeat(spaces) + price + '\n'))
+    // Big Chinese line at double size (same as notes). Keep "×qty" beside the
+    // name only when it fits; for long names drop it to the English line so the
+    // double-size text never overruns the line and gets squished. Price is
+    // right-aligned, dropping to its own line if even the name fills the row.
+    const withQty = `${zhName} ×${qty}`
+    const big = colWidth(withQty) * 2 + colWidth(price) + 1 <= LINE_WIDTH ? withQty : zhName
+    if (colWidth(big) * 2 + colWidth(price) + 1 <= LINE_WIDTH) {
+      const spaces = LINE_WIDTH - colWidth(big) * 2 - colWidth(price)
+      chunks.push(CMD_DOUBLE_SIZE, encodeText(big))
+      chunks.push(CMD_NORMAL_SIZE, encodeText(' '.repeat(spaces) + price + '\n'))
+    } else {
+      chunks.push(CMD_DOUBLE_SIZE, encodeText(big + '\n'), CMD_NORMAL_SIZE)
+      chunks.push(encodeText(' '.repeat(Math.max(1, LINE_WIDTH - colWidth(price))) + price + '\n'))
+    }
 
     // English name beneath — normal size, indented, with ×qty
     chunks.push(encodeText(`  ${item.nameEn} ×${qty}\n`))
