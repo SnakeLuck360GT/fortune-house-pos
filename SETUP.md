@@ -113,15 +113,16 @@ API_BASE=https://YOUR-SITE.netlify.app
 PRINTER_INTERFACE=/dev/usb/lp0
 POLL_MS=2000
 USE_GB2312=false
-RECEIPT_COPIES=2
+TAKEAWAY_COPIES=3
+DELIVERY_COPIES=4
 ```
 
 - **API_BASE** — your Netlify site address (no slash at the end). This must match
   the **Printer URL** you set in the tablet app's **Settings**.
 - **USE_GB2312** — set to `true` only if Chinese prints as garbage (common on
   cheap 58 mm printers). Leave `false` for modern EPSON/Star printers.
-- **RECEIPT_COPIES** — how many copies of each order to print (e.g. one for the
-  kitchen, one for the customer). Defaults to `2` if omitted.
+- **TAKEAWAY_COPIES / DELIVERY_COPIES** — how many copies of each order to print.
+  Default to `3` (takeaway) and `4` (delivery) if omitted.
 
 Save with **Ctrl+O, Enter**, then exit with **Ctrl+X**.
 
