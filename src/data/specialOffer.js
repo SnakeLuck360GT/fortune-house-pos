@@ -115,11 +115,17 @@ export function buildOfferItems({ people, persons, duckId, soups }) {
     sideZh.push(rice?.zh ?? '?')
     sideEn.push(stripParen(rice?.en ?? '?'))
   })
+  // Mixed starter platter shown at the very top, separated from the mains by a
+  // rule (Chinese block only; the English block stays compact).
+  const RULE = { rule: true }
   const details = [
+    { text: '拼盘', big: true },
+    RULE,
     { text: '主菜:', big: true, header: true },
     ...tally(mainZh).map(text => ({ text: `  ${text}`, big: true })),
     { text: '配菜:', big: true, header: true },
     ...tally(sideZh).map(text => ({ text: `  ${text}`, big: true })),
+    { text: 'Mix Platter', big: false },
     { text: 'Mains:', big: false, header: true },
     ...tally(mainEn).map(text => ({ text: `  ${text}`, big: false })),
     { text: 'Side dish:', big: false, header: true },
