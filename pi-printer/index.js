@@ -20,6 +20,7 @@ const USE_GB2312    = process.env.USE_GB2312 === 'true'  // set true for GB2312 
 const TAKEAWAY_COPIES = Math.max(1, parseInt(process.env.TAKEAWAY_COPIES || '3', 10))  // copies per takeaway order
 const DELIVERY_COPIES = Math.max(1, parseInt(process.env.DELIVERY_COPIES || '4', 10))  // copies per delivery order
 const LINE_WIDTH    = 32
+const LOGO_BUFFER   = null   // optional ESC/POS raster logo for the daily summary (none for now)
 
 // ─── Printer setup ──────────────────────────────────────────────────────────
 function createPrinter() {
@@ -51,6 +52,8 @@ const CMD_UNDERLINE_ON  = Buffer.from([0x1b, 0x2d, 0x01])
 const CMD_UNDERLINE_OFF = Buffer.from([0x1b, 0x2d, 0x00])
 const CMD_CUT           = Buffer.from([0x1d, 0x56, 0x41, 0x00])  // partial cut
 const CMD_LF            = Buffer.from([0x0a])
+const CMD_CHINESE_ON    = Buffer.from([0x1c, 0x26])  // FS & — enter Chinese (GB2312) mode
+const CMD_CHINESE_OFF   = Buffer.from([0x1c, 0x2e])  // FS . — exit Chinese mode
 
 function encodeText(text) {
   if (USE_GB2312) {
@@ -81,7 +84,16 @@ function center(str, width) {
 }
 
 function formatPrice(p) {
-  return `\xa3${Number(p).toFixed(2)}`  // £ sign
+  // GB2312 printers have no half-width £ (it maps to "?"), so use full-width ￡
+  const sym = USE_GB2312 ? '￡' : '\xa3'
+  return `${sym}${Number(p).toFixed(2)}`
+}
+
+// Printed column width of a string. On GB2312 printers a 2-byte glyph occupies
+// 2 columns and a 1-byte glyph 1 column, so the encoded byte length is the
+// column count. (English/UTF-8 path: ASCII names → 1 col each.)
+function colWidth(s) {
+  return encodeText(s).length
 }
 
 function getItemName(item, lang) {
@@ -130,6 +142,7 @@ function buildReceiptBuffers(job) {
 
   // Init + center
   chunks.push(CMD_INIT)
+  if (USE_GB2312) chunks.push(CMD_CHINESE_ON)   // enable Chinese font mode on GB2312 printers
   chunks.push(CMD_ALIGN_CENTER)
 
   // Restaurant name — double size
@@ -142,7 +155,6 @@ function buildReceiptBuffers(job) {
 
   chunks.push(encodeText(`${dateStr}  ${timeStr}\n`))
   if (tableNumber) chunks.push(encodeText(`Table: ${tableNumber}\n`))
-  if (orderId)     chunks.push(encodeText(`Order: ${orderId}\n`))
 
   // Order type banner
   chunks.push(CMD_BOLD_ON, CMD_DOUBLE_SIZE)
@@ -172,68 +184,48 @@ function buildReceiptBuffers(job) {
   chunks.push(encodeText('================================\n\n'))
   chunks.push(CMD_ALIGN_LEFT)
 
-  // Group items by category
-  const groups = {}
+  // Items — flat bilingual list, exactly mirroring the on-screen preview:
+  // Chinese name (double height) + "×qty", price right-aligned; English name
+  // beneath in normal size with "×qty"; then any set-meal breakdown.
   ;(items || []).forEach(item => {
-    const key = item.category || 'Other'
-    if (!groups[key]) groups[key] = []
-    groups[key].push(item)
-  })
+    const price  = formatPrice((item.price + (item.notePrice || 0)) * item.quantity)
+    const zhName = item.nameZh || item.nameEn
+    const qty    = item.peopleQty ?? item.quantity   // set-menus show "×people"
 
-  for (const [category, catItems] of Object.entries(groups)) {
-    chunks.push(CMD_BOLD_ON)
-    chunks.push(encodeText(category.toUpperCase() + '\n'))
-    chunks.push(CMD_BOLD_OFF)
-    chunks.push(encodeText('--------------------------------\n'))
+    // Big Chinese line: name ×qty (double size) ... price (normal, right-aligned)
+    const left    = `${zhName} ×${qty}`
+    const spaces  = Math.max(1, LINE_WIDTH - colWidth(left) * 2 - colWidth(price))
+    chunks.push(CMD_DOUBLE_SIZE, encodeText(left))
+    chunks.push(CMD_NORMAL_SIZE, encodeText(' '.repeat(spaces) + price + '\n'))
 
-    catItems.forEach(item => {
-      const name     = getItemName(item, lang)
-      const priceStr = formatPrice((item.price + (item.notePrice || 0)) * item.quantity)
+    // English name beneath — normal size, indented, with ×qty
+    chunks.push(encodeText(`  ${item.nameEn} ×${qty}\n`))
 
-      if (lang === 'zh' && item.nameZh) {
-        chunks.push(CMD_DOUBLE_SIZE)
-        const left = pad(name.slice(0, 10) + '  x' + item.quantity, 14)
-        chunks.push(encodeText(left + '  ' + priceStr + '\n'))
-        chunks.push(CMD_NORMAL_SIZE)
-      } else {
-        chunks.push(CMD_BOLD_ON)
-        const left = pad(`${name}  x${item.quantity}`, LINE_WIDTH - priceStr.length)
-        chunks.push(encodeText(left + priceStr + '\n'))
-        chunks.push(CMD_BOLD_OFF)
-      }
+    // Set-meal breakdown: big Chinese block, compact English block, with
+    // horizontal rules and underlined headers (identical to the preview).
+    if (Array.isArray(item.details)) {
+      const isBlock = item.details.length > 2
+      let prevBig = null
+      item.details.forEach((d, di) => {
+        if (d.rule) { chunks.push(encodeText('-'.repeat(LINE_WIDTH) + '\n')); return }
+        if (prevBig === true && !d.big && isBlock) chunks.push(lf(1))               // gap between zh/en blocks
+        if (d.header && d.big && di > 0 && prevBig === !!d.big) chunks.push(lf(1))  // gap before a big group header (English stays compact)
+        const u = d.header
+        if (d.big) chunks.push(CMD_DOUBLE_SIZE, ...(u ? [CMD_UNDERLINE_ON] : []), encodeText(`${d.text}\n`), ...(u ? [CMD_UNDERLINE_OFF] : []), CMD_NORMAL_SIZE)
+        else       chunks.push(...(u ? [CMD_UNDERLINE_ON] : []), encodeText(`  ${d.text}\n`), ...(u ? [CMD_UNDERLINE_OFF] : []))
+        prevBig = !!d.big
+      })
+    }
 
-      // Offer / set-meal breakdown — Chinese block large, English block small,
-      // with a blank line separating the two blocks.
-      if (Array.isArray(item.details)) {
-        const isBlock = item.details.length > 2
-        let prevBig = null
-        item.details.forEach(d => {
-          const text = typeof d === 'string' ? d : d.text
-          const big  = typeof d === 'object' && !!d.big
-          if (prevBig === true && !big && isBlock) chunks.push(lf(1))
-          if (big) {
-            chunks.push(CMD_DOUBLE_SIZE)
-            chunks.push(encodeText(`${text}\n`))
-            chunks.push(CMD_NORMAL_SIZE)
-          } else {
-            chunks.push(encodeText(`  ${text}\n`))
-          }
-          prevBig = big
-        })
-      }
-
-      if (item.note) {
-        parseNoteLines(item.note).forEach(({ prefix, zh, en }) => {
-          chunks.push(CMD_DOUBLE_SIZE)
-          chunks.push(encodeText(`${prefix} ${zh}\n`))
-          chunks.push(CMD_NORMAL_SIZE)
-          if (en !== zh) chunks.push(encodeText(`  ${prefix} ${en}\n`))
-        })
-      }
-    })
+    if (item.note) {
+      parseNoteLines(item.note).forEach(({ prefix, zh, en }) => {
+        chunks.push(CMD_DOUBLE_SIZE, encodeText(`${prefix} ${zh}\n`), CMD_NORMAL_SIZE)
+        if (en !== zh) chunks.push(encodeText(`  ${prefix} ${en}\n`))
+      })
+    }
 
     chunks.push(lf(1))
-  }
+  })
 
   chunks.push(encodeText('--------------------------------\n'))
 
@@ -281,6 +273,7 @@ function buildFloatBuffers(job) {
 
   const chunks = []
   chunks.push(CMD_INIT, CMD_ALIGN_CENTER)
+  if (USE_GB2312) chunks.push(CMD_CHINESE_ON)   // enable Chinese font mode on GB2312 printers
 
   if (LOGO_BUFFER) chunks.push(LOGO_BUFFER)
 
