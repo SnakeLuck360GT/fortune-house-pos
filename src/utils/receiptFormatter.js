@@ -55,12 +55,11 @@ export function buildReceiptLines({ items, total, tableNumber, discount, deliver
   const lines = []
 
   lines.push({ type: 'sep-heavy' })
-  lines.push({ type: 'center', text: RESTAURANT_NAME })
+  // Order type banner — at the very top, bilingual (no restaurant name)
+  lines.push({ type: 'order-type', text: isDelivery ? '🛵  DELIVERY  外送' : '🛍  COLLECTION  自取', isDelivery })
   lines.push({ type: 'center', text: `${dateStr}  ${timeStr}` })
   if (tableNumber) lines.push({ type: 'center', text: `Table: ${tableNumber}` })
 
-  // Order type
-  lines.push({ type: 'order-type', text: isDelivery ? '🛵  DELIVERY  外送' : '🛍  TAKEAWAY  外带', isDelivery })
   if (isDelivery && deliveryInfo) {
     if (deliveryInfo.customerName) lines.push({ type: 'center', text: deliveryInfo.customerName })
     if (deliveryInfo.address)      lines.push({ type: 'center', text: deliveryInfo.address })
@@ -70,14 +69,13 @@ export function buildReceiptLines({ items, total, tableNumber, discount, deliver
   if (phone) lines.push({ type: 'center', text: `Tel: ${phone}` })
   etaLines(ts, isDelivery).forEach(text => lines.push({ type: 'eta', text }))
   lines.push({ type: 'sep-heavy' })
-  lines.push({ type: 'blank' })
 
   items.forEach(item => {
     const price  = formatPrice((item.price + (item.notePrice || 0)) * item.quantity)
     const zhName = item.nameZh || item.nameEn
     const qty    = item.peopleQty ?? item.quantity   // set-menus show "×people"
-    lines.push({ type: 'zh', text: zhName, price, quantity: qty })
-    lines.push({ type: 'en', text: `${item.nameEn}  ×${qty}` })
+    lines.push({ type: 'zh', text: zhName, quantity: qty })
+    lines.push({ type: 'en', text: `${qty}× ${item.nameEn}`, price })
     if (Array.isArray(item.details)) {
       const isBlock = item.details.length > 2   // multi-line breakdown vs single zh/en pair
       item.details.forEach(d => {
@@ -108,8 +106,6 @@ export function buildReceiptLines({ items, total, tableNumber, discount, deliver
 
   lines.push({ type: 'total', price: formatPrice(total) })
   lines.push({ type: 'sep-heavy' })
-  lines.push({ type: 'footer', text: '** Thank you / 谢谢惠顾 **' })
-  lines.push({ type: 'sep-heavy' })
 
   return lines
 }
@@ -125,8 +121,10 @@ export function buildReceiptText({ items, total, tableNumber, discount, delivery
         case 'center':      return center(l.text, LINE_WIDTH)
         case 'order-type':  return center(l.text, LINE_WIDTH)
         case 'eta':         return center(l.text, LINE_WIDTH)
-        case 'zh':          return pad(l.text, LINE_WIDTH - l.price.length) + l.price
-        case 'en':          return `  ${l.text}`
+        case 'zh':          return `${l.quantity}× ${l.text}`
+        case 'en':          return l.price
+                              ? pad(`  ${l.text}`, LINE_WIDTH - l.price.length) + l.price
+                              : `  ${l.text}`
         case 'detail-rule': return '-'.repeat(LINE_WIDTH)
         case 'detail':      return `  ${l.text}`
         case 'note':

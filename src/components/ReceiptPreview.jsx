@@ -27,14 +27,18 @@ export default function ReceiptPreview({ items, total, tableNumber, discount, de
             return (
               <div key={i} className="rp-zh">
                 <span className="rp-zh__name">
+                  <span className="rp-zh__qty">{line.quantity}× </span>
                   {line.text}
-                  <span className="rp-zh__qty"> ×{line.quantity}</span>
                 </span>
-                <span className="rp-zh__price">{line.price}</span>
               </div>
             )
           case 'en':
-            return <div key={i} className="rp-en">{line.text}</div>
+            return (
+              <div key={i} className="rp-en">
+                <span>{line.text}</span>
+                {line.price && <span className="rp-en__price">{line.price}</span>}
+              </div>
+            )
           case 'detail-rule':
             return <div key={i} className="rp-detail-rule" />
           case 'detail': {

@@ -148,18 +148,13 @@ function buildReceiptBuffers(job) {
   if (USE_GB2312) chunks.push(CMD_CHINESE_ON)   // enable Chinese font mode on GB2312 printers
   chunks.push(CMD_ALIGN_CENTER)
 
-  // Restaurant name — bold, double size (clear without squishing)
+  // Order type banner — at the very top, bold + double size, bilingual
   chunks.push(CMD_BOLD_ON, CMD_DOUBLE_SIZE)
-  chunks.push(encodeText('Fortune House\n'))
+  chunks.push(encodeText(isDelivery ? 'DELIVERY 外送\n' : 'COLLECTION 自取\n'))
   chunks.push(CMD_NORMAL_SIZE, CMD_BOLD_OFF)
 
   chunks.push(encodeText(`${dateStr}  ${timeStr}\n`))
   if (tableNumber) chunks.push(encodeText(`Table: ${tableNumber}\n`))
-
-  // Order type banner
-  chunks.push(CMD_BOLD_ON, CMD_DOUBLE_SIZE)
-  chunks.push(encodeText(isDelivery ? 'DELIVERY 外送\n' : 'TAKEAWAY 外带\n'))
-  chunks.push(CMD_NORMAL_SIZE, CMD_BOLD_OFF)
 
   // Delivery customer info
   if (isDelivery && deliveryInfo) {
@@ -181,7 +176,7 @@ function buildReceiptBuffers(job) {
   etaLines(ts, isDelivery).forEach(line => chunks.push(encodeText(line + '\n')))
   chunks.push(CMD_BOLD_OFF)
 
-  chunks.push(encodeText('================================\n\n'))
+  chunks.push(encodeText('================================\n'))
   chunks.push(CMD_ALIGN_LEFT)
 
   // Items — flat bilingual list, exactly mirroring the on-screen preview:
@@ -195,17 +190,13 @@ function buildReceiptBuffers(job) {
     // Item title — a PURE double-size line, so it prints at exactly the same
     // size as the 汤:/主菜: lines and notes. (Putting the normal-size price on
     // the same line made the printer condense/"squish" the title.)
-    chunks.push(CMD_DOUBLE_SIZE, encodeText(`${zhName} ×${qty}\n`), CMD_NORMAL_SIZE)
+    chunks.push(CMD_DOUBLE_SIZE, encodeText(`${qty}× ${zhName}\n`), CMD_NORMAL_SIZE)
 
-    // English name + price on a normal-size line; price right-aligned, dropping
-    // to its own line only if the name is too long to share.
-    const en = `  ${item.nameEn} ×${qty}`
-    if (colWidth(en) + colWidth(price) + 1 <= LINE_WIDTH) {
-      chunks.push(encodeText(en + ' '.repeat(LINE_WIDTH - colWidth(en) - colWidth(price)) + price + '\n'))
-    } else {
-      chunks.push(encodeText(en + '\n'))
-      chunks.push(encodeText(' '.repeat(Math.max(1, LINE_WIDTH - colWidth(price))) + price + '\n'))
-    }
+    // English name + price on a normal-size line; price always right-aligned on
+    // the SAME line as the English text, however long the name is (min 1 space).
+    const en = `  ${qty}× ${item.nameEn}`
+    const gap = Math.max(1, LINE_WIDTH - colWidth(en) - colWidth(price))
+    chunks.push(encodeText(en + ' '.repeat(gap) + price + '\n'))
 
     // Set-meal breakdown: big Chinese block, compact English block, with
     // horizontal rules and underlined headers (identical to the preview).
@@ -229,8 +220,6 @@ function buildReceiptBuffers(job) {
         if (en !== zh) chunks.push(encodeText(`  ${prefix} ${en}\n`))
       })
     }
-
-    chunks.push(lf(1))
   })
 
   chunks.push(encodeText('--------------------------------\n'))
@@ -258,9 +247,6 @@ function buildReceiptBuffers(job) {
   chunks.push(encodeText(pad('TOTAL:', 12) + totalStr + '\n'))
   chunks.push(CMD_NORMAL_SIZE, CMD_BOLD_OFF)
 
-  chunks.push(encodeText('================================\n'))
-  chunks.push(CMD_ALIGN_CENTER)
-  chunks.push(encodeText('** Thank you / 谢谢惠顾 **\n'))
   chunks.push(encodeText('================================\n'))
 
   chunks.push(lf(4))
