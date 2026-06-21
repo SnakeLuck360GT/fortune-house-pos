@@ -110,7 +110,7 @@ export function buildOfferItems({ people, persons, duckId, soups }) {
     const sauce = byId(SAUCES, effectiveSauceId(main, p.sauceId))
     const rice  = byId(RICE_OPTIONS, p.riceId)
     const note  = p.note?.trim()
-    mainZh.push(`${main?.zh ?? '?'} · ${sauce?.zh ?? '?'}${note ? ` · 备注: ${note}` : ''}`)
+    mainZh.push(`${main?.zh ?? '?'}·${sauce?.zh ?? '?'}${note ? ` · 备注: ${note}` : ''}`)
     mainEn.push(`${stripParen(main?.en ?? '?')} · ${sauce?.en ?? '?'}${note ? ` · Note: ${translateNoteToEn(note)}` : ''}`)
     sideZh.push(rice?.zh ?? '?')
     sideEn.push(stripParen(rice?.en ?? '?'))

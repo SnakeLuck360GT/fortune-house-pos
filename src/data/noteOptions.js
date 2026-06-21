@@ -13,6 +13,8 @@ export const NOTE_OPTIONS = [
   { id: 'no-beansprout',   zh: '免芽菜',   en: 'No Beansprout' },
   { id: 'extra-cashew',    zh: '加腰果',   en: 'Extra Cashew Nut' },
   { id: 'less-salt',       zh: '少盐',     en: 'Less Salt' },
+  { id: 'no-sauce',        zh: '不加酱',   en: 'No Sauce' },
+  { id: 'add-sauce',       zh: '加酱',     en: 'Add Sauce' },
   { id: 'extra-sauce',     zh: '多加酱',   en: 'Extra Sauce' },
   { id: 'extra-spicy',     zh: '加辣',     en: 'Extra Spicy' },
   { id: 'extra-chilli',    zh: '多加辣椒', en: 'Extra Chilli' },
@@ -40,6 +42,7 @@ const UNIVERSAL_IDS = [
   'no-msg', 'no-salt', 'less-salt',
   'no-vegetables', 'no-onion', 'no-mushrooms', 'no-garlic', 'no-sugar', 'no-chilli',
   'no-beansprout', 'no-egg',
+  'no-sauce', 'add-sauce',
   'extra-spicy', 'extra-chilli', 'extra-mushrooms', 'extra-vegetables', 'extra-sauce', 'extra-cashew',
   'well-done',
 ]
