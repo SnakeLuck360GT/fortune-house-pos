@@ -141,6 +141,7 @@ export function buildOfferItems({ people, persons, duckId, soups }) {
     category:  'Special Offer',
     isOfferItem: true,
     peopleQty: people,   // show "×people" on the receipt instead of the line quantity
+    qtyLabel:  `${people}×£${PRICE_PER_PERSON}`,   // Chinese title line reads "2×£12 特价外卖套餐"
     details,
   })
 

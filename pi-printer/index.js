@@ -96,7 +96,8 @@ function encodeText(text) {
     .replace(/[\p{Extended_Pictographic}\uFE0F\u200D]/gu, '')
   if (USE_GB2312) {
     try {
-      return iconv.encode(text, 'GB2312')
+      // GB2312 has no half-width £ (prints "?") — e.g. "2×£12" labels, banquet surcharges
+      return iconv.encode(text.replace(/£/g, '￡'), 'GB2312')
     } catch {
       return Buffer.from(text, 'utf8')
     }
@@ -306,7 +307,7 @@ function buildReceiptBuffers(job) {
     // the same line made the printer condense/"squish" the title.)
     // Items with no Chinese name skip this line — the English line below has the name.
     const { zhTag, enTag, own } = splitNotes(item)
-    if (item.nameZh) chunks.push(...zhLine(`${qty}× ${item.nameZh}${zhTag}`))
+    if (item.nameZh) chunks.push(...zhLine(`${item.qtyLabel ?? `${qty}×`} ${item.nameZh}${zhTag}`))
 
     // English name + price on a normal-size line; price right-aligned on the first
     // line, long names wrap underneath (see priceLines).

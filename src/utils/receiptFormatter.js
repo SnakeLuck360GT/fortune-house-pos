@@ -105,7 +105,7 @@ export function buildReceiptLines({ items, total, tableNumber, discount, deliver
     const zhOnly = item.isOfferItem
     // const zhOnly = false
     const { zhTag, enTag, own } = splitNotes(item)
-    lines.push({ type: 'zh', text: `${zhName}${zhTag}`, quantity: qty })
+    lines.push({ type: 'zh', text: `${zhName}${zhTag}`, quantity: qty, qtyLabel: item.qtyLabel })
     lines.push({ type: 'en', text: `${qty}× ${item.nameEn}${enTag}`, price })
     if (Array.isArray(item.details)) {
       const isBlock = item.details.length > 2   // multi-line breakdown vs single zh/en pair

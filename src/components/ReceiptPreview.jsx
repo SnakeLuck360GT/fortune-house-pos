@@ -27,7 +27,7 @@ export default function ReceiptPreview({ items, total, tableNumber, discount, de
             return (
               <div key={i} className="rp-zh">
                 <span className="rp-zh__name">
-                  <span className="rp-zh__qty">{line.quantity}× </span>
+                  <span className="rp-zh__qty">{line.qtyLabel ?? `${line.quantity}×`} </span>
                   {line.text}
                 </span>
               </div>

@@ -243,9 +243,9 @@ export const menu = [
     category: "Kids' Meals",
     categoryZh: '儿童套餐',
     items: [
-      { id: 'km01', nameEn: 'Chicken Nuggets & Chips (with Fruit Shoot)', nameZh: '鸡块薯条 (含饮料)',  price: 5.50 },
-      { id: 'km02', nameEn: 'Fish Fingers & Chips (with Fruit Shoot)',    nameZh: '鱼指薯条 (含饮料)',  price: 5.50 },
-      { id: 'km03', nameEn: 'Sausage & Chips (with Fruit Shoot)',         nameZh: '香肠薯条 (含饮料)',  price: 5.50 },
+      { id: 'km01', nameEn: 'Chicken Nuggets & Chips (with Fruit Shoot)', nameZh: '鸡块薯条 (儿童餐)',  price: 5.50 },
+      { id: 'km02', nameEn: 'Fish Fingers & Chips (with Fruit Shoot)',    nameZh: '鱼指薯条 (儿童餐)',  price: 5.50 },
+      { id: 'km03', nameEn: 'Sausage & Chips (with Fruit Shoot)',         nameZh: '香肠薯条 (儿童餐)',  price: 5.50 },
     ],
   },
   {
