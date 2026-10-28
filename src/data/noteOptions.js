@@ -1,3 +1,5 @@
+import { getConfig, dishNotesFor, globalNotes } from '../utils/menuConfig.js'
+
 export const NOTE_OPTIONS = [
   { id: 'no-chilli',       zh: '不加辣',   en: 'No Chilli' },
   { id: 'no-garlic',       zh: '不加蒜',   en: 'No Garlic' },
@@ -29,14 +31,21 @@ export const NOTE_OPTIONS = [
 ]
 
 const BY_ID = Object.fromEntries(NOTE_OPTIONS.map(o => [o.id, o]))
-const ZH_EN = Object.fromEntries(NOTE_OPTIONS.map(o => [o.zh, o.en]))
+
+// Chinese → English for built-in notes plus the ones added in Menu Config.
+function zhToEn() {
+  const cfg = getConfig()
+  const custom = [...cfg.notes, ...Object.values(cfg.dishNotes).flat()]
+  return Object.fromEntries([...NOTE_OPTIONS, ...custom].map(o => [o.zh, o.en]))
+}
 
 // Convert a comma-joined Chinese note (as stored by NoteModal) to English,
 // keeping any custom free-text parts unchanged.
 export function translateNoteToEn(note) {
   if (!note) return ''
+  const map = zhToEn()
   return note.split(/[,，]\s*/).map(s => s.trim()).filter(Boolean)
-    .map(s => ZH_EN[s] || s).join(', ')
+    .map(s => map[s] || s).join(', ')
 }
 
 // Notes that are always shown regardless of dish
@@ -53,7 +62,8 @@ const UNIVERSAL_IDS = [
 // specific = notes relevant to this dish's ingredients
 // universal = always-applicable modifiers
 export function getItemNotes(item) {
-  const name = ((item?.nameEn ?? '') + ' ' + (item?.nameZh ?? '')).toLowerCase()
+  // Original names, so renaming a dish in Menu Config doesn't change its notes
+  const name = ((item?.baseNameEn ?? item?.nameEn ?? '') + ' ' + (item?.baseNameZh ?? item?.nameZh ?? '')).toLowerCase()
 
   const specificIds = []
 
@@ -81,10 +91,14 @@ export function getItemNotes(item) {
   if (/bbq骨/.test(name))   // BBQ ribs (not Char Sui "BBQ Pork")
     specificIds.push('dry')
 
-  const specific = specificIds.map(id => BY_ID[id]).filter(Boolean)
-  const universal = UNIVERSAL_IDS
-    .filter(id => !specificIds.includes(id))
-    .map(id => BY_ID[id])
+  // Notes added in Menu Config: this dish's own go with the dish-specific ones,
+  // the all-dishes extras join the universal list (shown under "Other").
+  const cfg = getConfig()
+  const specific = [...specificIds.map(id => BY_ID[id]).filter(Boolean), ...dishNotesFor(item, cfg)]
+  const universal = [
+    ...UNIVERSAL_IDS.filter(id => !specificIds.includes(id)).map(id => BY_ID[id]),
+    ...globalNotes(cfg),
+  ]
 
   return { specific, universal }
 }

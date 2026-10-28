@@ -1,13 +1,25 @@
 import { useState, useMemo, useCallback } from 'react'
-import { menu, allItems } from '../data/menu.js'
+import { menu as baseMenu } from '../data/menu.js'
+import { useMenuConfig, applyNames } from '../utils/menuConfig.js'
 
 export function useMenu() {
   const [selectedCategory, setSelectedCategory] = useState(null) // null = all
   const [searchQuery, setSearchQuery]           = useState('')
 
+  // Built-in menu with any dishes renamed in Menu Config
+  const config = useMenuConfig()
+  const menu = useMemo(() =>
+    baseMenu.map(c => ({ ...c, items: c.items.map(item => applyNames(item, config)) })),
+    [config]
+  )
+  const allItems = useMemo(() =>
+    menu.flatMap(c => c.items.map(item => ({ ...item, category: c.category, categoryZh: c.categoryZh }))),
+    [menu]
+  )
+
   const categories = useMemo(() =>
     menu.map(c => ({ category: c.category, categoryZh: c.categoryZh })),
-    []
+    [menu]
   )
 
   // Items shown in the centre panel (filtered by category or search)
@@ -30,7 +42,7 @@ export function useMenu() {
       })) : []
     }
     return allItems
-  }, [searchQuery, selectedCategory])
+  }, [searchQuery, selectedCategory, menu, allItems])
 
   // Active category title for centre panel header
   const activeCategoryTitle = useMemo(() => {
@@ -38,7 +50,7 @@ export function useMenu() {
     if (!selectedCategory) return null
     const cat = menu.find(c => c.category === selectedCategory)
     return cat ? { en: cat.category, zh: cat.categoryZh } : null
-  }, [searchQuery, selectedCategory])
+  }, [searchQuery, selectedCategory, menu])
 
   // Autocomplete suggestions (max 8, only when typing)
   const suggestions = useMemo(() => {
@@ -53,7 +65,7 @@ export function useMenu() {
         item.categoryZh.includes(q)
       )
       .slice(0, 8)
-  }, [searchQuery])
+  }, [searchQuery, allItems])
 
   const selectCategory = useCallback((cat) => {
     setSelectedCategory(cat)

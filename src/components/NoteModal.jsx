@@ -1,21 +1,23 @@
 import { useState, useRef } from 'react'
 import { useLanguage } from '../hooks/useLanguage.js'
-import { NOTE_OPTIONS, getItemNotes } from '../data/noteOptions.js'
-
-const PRESET_ZH = new Set(NOTE_OPTIONS.map(o => o.zh))
+import { getItemNotes } from '../data/noteOptions.js'
+import { formatPrice } from '../utils/receiptFormatter.js'
 
 function noteParts(note) {
   if (!note) return []
   return note.split(/[,，]\s*/).map(s => s.trim()).filter(Boolean)
 }
-function parseSelected(note) {
+function parseSelected(note, options) {
   const parts = noteParts(note)
-  return NOTE_OPTIONS.filter(opt => parts.includes(opt.zh)).map(opt => opt.id)
+  return options.filter(opt => parts.includes(opt.zh)).map(opt => opt.id)
 }
 // Anything in the note that isn't a known preset is the free-text custom note.
-function parseCustom(note) {
-  return noteParts(note).filter(p => !PRESET_ZH.has(p)).join(', ')
+function parseCustom(note, options) {
+  const preset = new Set(options.map(o => o.zh))
+  return noteParts(note).filter(p => !preset.has(p)).join(', ')
 }
+const presetPrice = (ids, options) =>
+  options.filter(o => ids.includes(o.id)).reduce((s, o) => s + (o.price || 0), 0)
 
 function NoteButton({ opt, isSelected, isZh, onToggle }) {
   return (
@@ -34,20 +36,26 @@ function NoteButton({ opt, isSelected, isZh, onToggle }) {
           <span className="sharebox-drink__en">{opt.zh}</span>
         </>
       )}
+      {opt.price > 0 && <span className="sharebox-drink__en" style={{ color: 'var(--accent-gold)' }}>+{formatPrice(opt.price)}</span>}
     </button>
   )
 }
 
 export default function NoteModal({ item, currentNote, currentNotePrice, onConfirm, onCancel }) {
   const { lang, t } = useLanguage()
-  const [selected, setSelected]     = useState(() => parseSelected(currentNote))
-  const [customText, setCustomText] = useState(() => parseCustom(currentNote))
-  const [customPrice, setCustomPrice] = useState(() => (currentNotePrice ? String(currentNotePrice) : ''))
+  const [{ specific, universal }] = useState(() => getItemNotes(item))
+  const options = [...specific, ...universal]
+  const [selected, setSelected]     = useState(() => parseSelected(currentNote, options))
+  const [customText, setCustomText] = useState(() => parseCustom(currentNote, options))
+  // The stored notePrice includes priced presets; the box shows only the custom part.
+  const [customPrice, setCustomPrice] = useState(() => {
+    const own = (currentNotePrice || 0) - presetPrice(parseSelected(currentNote, options), options)
+    return own > 0 ? String(Math.round(own * 100) / 100) : ''
+  })
   const [kbLang, setKbLang]         = useState('en')
   const inputRef = useRef(null)
   const isZh = lang === 'zh'
 
-  const { specific, universal } = getItemNotes(item)
   const removeOpts = universal.filter(o => o.id.startsWith('no-'))
   const extraOpts  = universal.filter(o => o.id.startsWith('extra-'))
   const otherOpts  = universal.filter(o => !o.id.startsWith('no-') && !o.id.startsWith('extra-'))
@@ -79,13 +87,13 @@ export default function NoteModal({ item, currentNote, currentNotePrice, onConfi
   }
 
   function handleConfirm() {
-    const presetNote = NOTE_OPTIONS
+    const presetNote = options
       .filter(opt => selected.includes(opt.id))
       .map(opt => opt.zh)
       .join(', ')
     const custom = customText.trim()
     const note = [presetNote, custom].filter(Boolean).join(', ')
-    const notePrice = Math.max(0, parseFloat(customPrice) || 0)
+    const notePrice = presetPrice(selected, options) + Math.max(0, parseFloat(customPrice) || 0)
     onConfirm(note, notePrice)
   }
 

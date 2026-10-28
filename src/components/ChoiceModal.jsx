@@ -12,7 +12,8 @@ export default function ChoiceModal({ item, onConfirm, onCancel }) {
   function handleConfirm() {
     if (!choice) return
     const { choices, ...rest } = item
-    onConfirm({ ...rest, id: `${item.id}_${choice.id}`, nameEn: choice.nameEn, nameZh: choice.nameZh })
+    onConfirm({ ...rest, id: `${item.id}_${choice.id}`, nameEn: choice.nameEn, nameZh: choice.nameZh,
+      baseNameEn: choice.baseNameEn, baseNameZh: choice.baseNameZh })
   }
 
   return (

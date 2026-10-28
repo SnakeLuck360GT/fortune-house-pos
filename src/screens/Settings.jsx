@@ -116,6 +116,14 @@ export default function Settings({ onNavigate, settings, onSaveSettings, lang, s
           </div>
         </div>
 
+        {/* Menu Config — has its own password */}
+        <div className="settings-section">
+          <h2>Menu & Notes</h2>
+          <button className="settings-btn settings-btn--outline" onClick={() => onNavigate('config')}>
+            🍽 Menu Config — rename dishes, special notes, export
+          </button>
+        </div>
+
         {/* Locked sections */}
         <div className={`settings-locked-group ${unlocked ? '' : 'settings-locked-group--locked'}`}>
 

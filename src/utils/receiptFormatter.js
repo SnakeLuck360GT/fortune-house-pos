@@ -34,19 +34,20 @@ function etaTime(ts, isDelivery) {
 // Chinese modifiers starting with 不 are "remove" (−), everything else is "add" (+).
 const ZH_TO_EN = Object.fromEntries(NOTE_OPTIONS.map(o => [o.zh, o.en]))
 
-function parseNoteLines(note) {
-  return note
-    .split(/[,，]\s*/)
-    .map(s => s.trim())
-    .filter(Boolean)
-    .map(zh => ({ prefix: zh.startsWith('不') ? '-' : '+', zh, en: ZH_TO_EN[zh] ?? zh }))
+// `noteEn` carries the English for notes added in Menu Config; it lines up
+// part-for-part with `note`.
+const noteParts = s => (s || '').split(/[,，]\s*/).map(x => x.trim()).filter(Boolean)
+function parseNoteLines(note, noteEn) {
+  const en = noteParts(noteEn)
+  return noteParts(note)
+    .map((zh, i) => ({ prefix: zh.startsWith('不') ? '-' : '+', zh, en: ZH_TO_EN[zh] ?? en[i] ?? zh }))
 }
 
 // Chinese notes go in brackets beside the dish ("椒盐鸡翅 (多加辣)"), with their
 // English translations beside the English name. Notes with no Chinese (typed
 // English, e.g. an allergy warning) and Share Box drinks keep their own lines.
 function splitNotes(item) {
-  const notes  = item.note ? parseNoteLines(item.note) : []
+  const notes  = item.note ? parseNoteLines(item.note, item.noteEn) : []
   const beside = item.isShareBox ? [] : notes.filter(n => /[\u3400-\u9fff]/.test(n.zh))
   const en     = beside.filter(n => n.en !== n.zh).map(n => n.en)
   return {

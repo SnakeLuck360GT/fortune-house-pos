@@ -6,6 +6,7 @@ import DeliveryDetails from './screens/DeliveryDetails.jsx'
 import TakeawayDetails from './screens/TakeawayDetails.jsx'
 import Settings       from './screens/Settings.jsx'
 import Queue          from './screens/Queue.jsx'
+import MenuConfig     from './screens/MenuConfig.jsx'
 
 const SETTINGS_KEY = 'pos_settings'
 
@@ -93,6 +94,9 @@ export default function App() {
           setLang={setLang}
           t={t}
         />
+      )}
+      {screen === 'config' && (
+        <MenuConfig onNavigate={navigate} />
       )}
       {screen === 'queue' && (
         <Queue onNavigate={navigate} settings={settings} t={t} />

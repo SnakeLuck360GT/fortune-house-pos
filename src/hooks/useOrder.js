@@ -1,4 +1,5 @@
 import { useReducer, useCallback, useMemo } from 'react'
+import { translateNoteToEn } from '../data/noteOptions.js'
 
 function orderReducer(state, action) {
   switch (action.type) {
@@ -42,7 +43,7 @@ function orderReducer(state, action) {
         ...state,
         items: state.items.map(i =>
           i.id === action.id
-            ? { ...i, note: action.note, notePrice: action.notePrice != null ? action.notePrice : (i.notePrice || 0) }
+            ? { ...i, note: action.note, noteEn: translateNoteToEn(action.note), notePrice: action.notePrice != null ? action.notePrice : (i.notePrice || 0) }
             : i
         ),
       }

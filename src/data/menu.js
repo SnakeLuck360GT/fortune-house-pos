@@ -95,7 +95,7 @@ export const menu = [
       ] },
       { id: 'ap21', nameEn: 'Salt & Pepper Fish Fillet',                 nameZh: '椒盐鱼柳',           price: 8.70 },
       { id: 'ap22', nameEn: 'Garlic Steamed King Prawn',                 nameZh: '蒜蓉蒸大虾',         price: 8.70 },
-      { id: 'ap23', nameEn: 'King Prawn in Batter with Spring Onion',    nameZh: '葱花脆炸大虾',       price: 8.70 },
+      { id: 'ap23', nameEn: 'King Prawn in Batter with Spring Onion',    nameZh: '葱仔大虾',           price: 8.70 },
       { id: 'ap24', nameEn: 'Salt & Pepper King Prawn off the Shell',    nameZh: '椒盐去壳大虾',       price: 8.70 },
       { id: 'ap25', nameEn: 'Salt & Pepper Ribs',                        nameZh: '椒盐排骨',           price: 8.90 },
       { id: 'ap26', nameEn: 'Peking Ribs',                               nameZh: '京骨',           price: 8.90 },
