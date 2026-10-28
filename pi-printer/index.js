@@ -25,7 +25,7 @@ const DELIVERY_COPIES = Math.max(1, parseInt(process.env.DELIVERY_COPIES || '4',
 const LINE_WIDTH    = 32
 // Chinese item/detail/note size as "<width>x<height>" (1-8 each). 2x1 = wide but
 // single height, which roughly halves the paper each Chinese line uses vs 2x2.
-const [ZH_W, ZH_H]  = (process.env.ZH_SIZE || '2x1').split('x').map(n => Math.min(8, Math.max(1, parseInt(n, 10) || 1)))
+const [ZH_W, ZH_H]  = (process.env.ZH_SIZE || '2x2').split('x').map(n => Math.min(8, Math.max(1, parseInt(n, 10) || 1)))
 // Dots fed per normal-height line (printer default is ~30-34). Lower = less gap
 // between lines. 0 = leave the printer's default spacing.
 const LINE_SPACING  = parseInt(process.env.LINE_SPACING || '28', 10)
