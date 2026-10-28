@@ -10,6 +10,7 @@ import BanquetModal from '../components/BanquetModal.jsx'
 import HouseDishModal from '../components/HouseDishModal.jsx'
 import PlatterModal from '../components/PlatterModal.jsx'
 import DuckPortionModal from '../components/DuckPortionModal.jsx'
+import ChoiceModal from '../components/ChoiceModal.jsx'
 import { wakePrinter } from '../utils/wakePrinter.js'
 import { useMenu }  from '../hooks/useMenu.js'
 import { useOrder } from '../hooks/useOrder.js'
@@ -29,6 +30,7 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
   const [drinkItem,    setDrinkItem]    = useState(null)
   const [platterItem, setPlatterItem]   = useState(null)
   const [duckItem,    setDuckItem]      = useState(null)
+  const [choiceItem,  setChoiceItem]    = useState(null)
   const [offerOpen,    setOfferOpen]    = useState(false)
   const [banquetItem,  setBanquetItem]  = useState(null)
   const [houseDish,    setHouseDish]    = useState(null)
@@ -58,6 +60,7 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
     if (item.isHouseDish) { setHouseDish(item);    return }
     if (item.isPlatter)   { setPlatterItem(item);  return }
     if (item.isDuck)      { setDuckItem(item);     return }
+    if (item.choices)     { setChoiceItem(item);   return }
     if (item.isShareBox)  { setShareBoxItem(item); return }
     if (item.isDrink)     { setDrinkItem(item);    return }
     order.addItem(item)
@@ -69,6 +72,7 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
     if (item.isHouseDish) { setHouseDish(item);    menu.clearSearch(); return }
     if (item.isPlatter)   { setPlatterItem(item);  menu.clearSearch(); return }
     if (item.isDuck)      { setDuckItem(item);     menu.clearSearch(); return }
+    if (item.choices)     { setChoiceItem(item);   menu.clearSearch(); return }
     if (item.isShareBox)  { setShareBoxItem(item); return }
     if (item.isDrink)     { setDrinkItem(item);    return }
     order.addItem(item)
@@ -109,6 +113,12 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
     setDuckItem(null)
     setActiveTab('order')
     showToast('Crispy duck added', 'success')
+  }
+
+  function handleChoiceConfirm(line) {
+    order.addItem(line)
+    setChoiceItem(null)
+    showToast(`${line.nameEn} added`, 'success')
   }
 
   function handleOfferConfirm(offerItems, meta) {
@@ -380,6 +390,14 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
           item={duckItem}
           onConfirm={handleDuckConfirm}
           onCancel={() => setDuckItem(null)}
+        />
+      )}
+
+      {choiceItem && (
+        <ChoiceModal
+          item={choiceItem}
+          onConfirm={handleChoiceConfirm}
+          onCancel={() => setChoiceItem(null)}
         />
       )}
 
