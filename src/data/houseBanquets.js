@@ -69,14 +69,15 @@ export const banquetById = id => BANQUETS.find(b => b.id === id)
 const byId = (list, id) => list.find(x => x.id === id)
 
 // Collapse repeated identical lines into "text ×n" (original order preserved).
-function tally(list) {
+// With `always`, singles get a count too ("鸡米汤 ×1").
+function tally(list, always = false) {
   const order = []
   const counts = new Map()
   for (const t of list) {
     if (!counts.has(t)) order.push(t)
     counts.set(t, (counts.get(t) || 0) + 1)
   }
-  return order.map(t => (counts.get(t) > 1 ? `${t} ×${counts.get(t)}` : t))
+  return order.map(t => (always || counts.get(t) > 1 ? `${t} ×${counts.get(t)}` : t))
 }
 
 // "Choose 1 different main per person if fewer than 5 people." So under 5
@@ -133,23 +134,23 @@ export function buildBanquetItem({ banquet, people, persons }) {
   const surZh = surcharge > 0 ? [{ text: `重复主菜加收 +£${surcharge.toFixed(2)}`, big: true }] : []
   const surEn = surcharge > 0 ? [{ text: `Duplicate main(s) +£${surcharge.toFixed(2)}`, big: false }] : []
 
-  // Big (Chinese) block: each starter (platter, + duck on B) is fenced by a
-  // horizontal rule, so the Soups section reads:  soups ─ platter ─ duck ─ mains.
+  // Big (Chinese) block: soups first (no 汤: header — each soup carries its
+  // count, e.g. "鸡米汤 ×1"), then each starter (platter, + duck on B) fenced by
+  // a horizontal rule:  soups ─ platter ─ duck ─ mains.
   // English block stays compact — plain lines, no rules.
   const RULE = { rule: true }
-  const starterZhBlock = [...starterZh.flatMap(text => [RULE, { text: `  ${text}`, big: true }]), RULE]
+  const starterZhBlock = [...starterZh.flatMap(text => [RULE, { text, big: true }]), RULE]
   const starterEnLines = starterEn.map(text => ({ text: `  ${text}`, big: false }))
 
   const details = [
-    { text: '汤:', big: true, header: true },
-    ...tally(soupZh).map(text => ({ text: `  ${text}`, big: true })),
+    ...tally(soupZh, true).map(text => ({ text, big: true })),
     ...starterZhBlock,
     { text: '主菜:', big: true, header: true },
     ...tally(mainZh).map(text => ({ text: `  ${text}`, big: true })),
     { text: `${RICE_INCLUDED.zh} ×${people}`, big: true },
     ...surZh,
     { text: 'Soups:', big: false, header: true },
-    ...tally(soupEn).map(text => ({ text: `  ${text}`, big: false })),
+    ...tally(soupEn, true).map(text => ({ text: `  ${text}`, big: false })),
     ...starterEnLines,
     { text: 'Mains:', big: false, header: true },
     ...tally(mainEn).map(text => ({ text: `  ${text}`, big: false })),

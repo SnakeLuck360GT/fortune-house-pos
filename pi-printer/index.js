@@ -90,7 +90,10 @@ const CMD_RULE          = ruleCmd(2)  // thin divider (was a line of ----)
 const CMD_RULE_HEAVY    = ruleCmd(4)  // thick divider (was a line of ====)
 
 function encodeText(text) {
-  text = text.replace(/¼/g, '1/4').replace(/½/g, '1/2')   // not in GB2312 — would print as "?"
+  // Not in GB2312, so they'd print as "?" (or "¥" for dashes): spell out
+  // fractions, plain hyphens for dashes, drop emoji
+  text = text.replace(/¼/g, '1/4').replace(/½/g, '1/2').replace(/[–—]/g, '-')
+    .replace(/[\p{Extended_Pictographic}\uFE0F\u200D]/gu, '')
   if (USE_GB2312) {
     try {
       return iconv.encode(text, 'GB2312')
@@ -131,6 +134,34 @@ function formatPrice(p) {
 // column count. (English/UTF-8 path: ASCII names → 1 col each.)
 function colWidth(s) {
   return encodeText(s).length
+}
+
+// Wrap to `cols` columns, breaking at spaces so English words aren't split
+// mid-word ("peanu/ts"); a word longer than a whole line (e.g. Chinese with no
+// spaces) breaks anywhere, continuing on the current line.
+function wrapText(text, cols) {
+  const fits  = str => colWidth(str) <= cols
+  const lines = ['']
+  for (const word of text.split(/(?<= )/)) {
+    const last = lines.length - 1
+    if (fits(lines[last] + word.trimEnd())) { lines[last] += word; continue }
+    if (fits(word.trimEnd())) { if (lines[last].trim()) lines.push(word); else lines[last] = word; continue }
+    for (const ch of word) {
+      const l = lines.length - 1
+      if (ch === ' ' || fits(lines[l] + ch)) lines[l] += ch
+      else lines.push(ch)
+    }
+  }
+  return lines.map(l => l.trimEnd()).join('\n') + '\n'
+}
+const ZH_COLS = Math.floor(LINE_WIDTH / ZH_W)   // columns available on a Chinese-size line
+
+// Chinese-size line, word-wrapped. An underlined `head` (e.g. "主菜:") stays
+// underlined at the start of the first line; `text` follows it.
+function zhLine(text, head = '') {
+  const wrapped = wrapText(head + text, ZH_COLS)
+  if (!head) return [CMD_ZH_SIZE, encodeText(wrapped), CMD_NORMAL_SIZE]
+  return [CMD_ZH_SIZE, CMD_UNDERLINE_ON, encodeText(head), CMD_UNDERLINE_OFF, encodeText(wrapped.slice(head.length)), CMD_NORMAL_SIZE]
 }
 
 // "  2× English name" + right-aligned price. A name too long to share the line
@@ -227,13 +258,13 @@ function buildReceiptBuffers(job) {
 
   // Delivery customer info
   if (isDelivery && deliveryInfo) {
-    if (deliveryInfo.customerName) chunks.push(encodeText(`${deliveryInfo.customerName}\n`))
+    if (deliveryInfo.customerName) chunks.push(encodeText(wrapText(deliveryInfo.customerName, LINE_WIDTH)))
     // Drive time shares the address line to save paper
     const drive = deliveryInfo.driveMinutes ? ` (~${deliveryInfo.driveMinutes} min)` : ''
-    if (deliveryInfo.address)      chunks.push(encodeText(`${deliveryInfo.address}${drive}\n`))
+    if (deliveryInfo.address)      chunks.push(encodeText(wrapText(`${deliveryInfo.address}${drive}`, LINE_WIDTH)))
     else if (drive)                chunks.push(encodeText(`${drive.trim()}\n`))
   } else if (customerName) {
-    chunks.push(encodeText(`${customerName}\n`))
+    chunks.push(encodeText(wrapText(customerName, LINE_WIDTH)))
   }
 
   // Customer phone (takeaway + delivery)
@@ -249,7 +280,6 @@ function buildReceiptBuffers(job) {
   // beneath in normal size with "×qty"; then any set-meal breakdown.
   ;(items || []).forEach(item => {
     const price  = formatPrice((item.price + (item.notePrice || 0)) * item.quantity)
-    const zhName = item.nameZh || item.nameEn
     const qty    = item.peopleQty ?? item.quantity   // set-menus show "×people"
     // Banquets + special offer: English name line (with price) kept, but the breakdown
     // is Chinese only, compacted (see compactDetails). To bring the English breakdown
@@ -260,7 +290,8 @@ function buildReceiptBuffers(job) {
     // Item title — a PURE Chinese-size line, so it prints at exactly the same
     // size as the 汤:/主菜: lines and notes. (Putting the normal-size price on
     // the same line made the printer condense/"squish" the title.)
-    chunks.push(CMD_ZH_SIZE, encodeText(`${qty}× ${zhName}\n`), CMD_NORMAL_SIZE)
+    // Items with no Chinese name skip this line — the English line below has the name.
+    if (item.nameZh) chunks.push(...zhLine(`${qty}× ${item.nameZh}`))
 
     // English name + price on a normal-size line; price right-aligned on the first
     // line, long names wrap underneath (see priceLines).
@@ -272,7 +303,7 @@ function buildReceiptBuffers(job) {
       ;(zhOnly ? compactDetails(item.details) : item.details).forEach(d => {
         if (d.rule) { chunks.push(CMD_RULE); return }
         const u = d.header
-        if (d.big) chunks.push(CMD_ZH_SIZE, ...(u ? [CMD_UNDERLINE_ON] : []), encodeText(d.text), ...(u ? [CMD_UNDERLINE_OFF] : []), encodeText(`${d.rest || ''}\n`), CMD_NORMAL_SIZE)
+        if (d.big) chunks.push(...(u ? zhLine(d.rest || '', d.text) : zhLine(d.text)))
         else       chunks.push(...(u ? [CMD_UNDERLINE_ON] : []), encodeText(`  ${d.text}\n`), ...(u ? [CMD_UNDERLINE_OFF] : []))
       })
     }
@@ -281,8 +312,8 @@ function buildReceiptBuffers(job) {
       parseNoteLines(item.note).forEach(({ prefix, zh, en }) => {
         // Share Box drinks are English-only — print them small, like the other English lines
         if (item.isShareBox) { chunks.push(encodeText(`  ${prefix} ${en}\n`)); return }
-        chunks.push(CMD_ZH_SIZE, encodeText(`${prefix} ${zh}\n`), CMD_NORMAL_SIZE)
-        if (en !== zh && !zhOnly) chunks.push(encodeText(`  ${prefix} ${en}\n`))
+        chunks.push(...zhLine(`${prefix} ${zh}`))
+        if (en !== zh && !zhOnly) chunks.push(encodeText(wrapText(`  ${prefix} ${en}`, LINE_WIDTH)))
       })
     }
   })
@@ -294,14 +325,14 @@ function buildReceiptBuffers(job) {
   if (hasExtras) {
     const subtotal = (items || []).reduce((s, i) => s + (i.price + (i.notePrice || 0)) * i.quantity, 0)
     chunks.push(CMD_BOLD_ON)
-    chunks.push(encodeText(pad('SUBTOTAL:', LINE_WIDTH - formatPrice(subtotal).length) + formatPrice(subtotal) + '\n'))
+    chunks.push(encodeText(pad('SUBTOTAL:', LINE_WIDTH - colWidth(formatPrice(subtotal))) + formatPrice(subtotal) + '\n'))
     if (deliveryFee && Number(deliveryFee) > 0) {
       const d = formatPrice(Number(deliveryFee))
-      chunks.push(encodeText(pad('DELIVERY:', LINE_WIDTH - d.length) + d + '\n'))
+      chunks.push(encodeText(pad('DELIVERY:', LINE_WIDTH - colWidth(d)) + d + '\n'))
     }
     if (discount && Number(discount) > 0) {
       const disc = `-${formatPrice(Number(discount))}`
-      chunks.push(encodeText(pad('DISCOUNT:', LINE_WIDTH - disc.length) + disc + '\n'))
+      chunks.push(encodeText(pad('DISCOUNT:', LINE_WIDTH - colWidth(disc)) + disc + '\n'))
     }
     chunks.push(CMD_BOLD_OFF)
   }
@@ -309,7 +340,7 @@ function buildReceiptBuffers(job) {
   // Total — bold, double width only (half the paper of full double size)
   chunks.push(CMD_BOLD_ON, CMD_WIDE_SIZE)
   const totalStr = formatPrice(total)
-  chunks.push(encodeText(pad('TOTAL:', Math.floor(LINE_WIDTH / 2) - totalStr.length) + totalStr + '\n'))
+  chunks.push(encodeText(pad('TOTAL:', Math.floor(LINE_WIDTH / 2) - colWidth(totalStr)) + totalStr + '\n'))
   chunks.push(CMD_NORMAL_SIZE, CMD_BOLD_OFF)
 
   chunks.push(CMD_CUT)
@@ -355,8 +386,8 @@ function buildFloatBuffers(job) {
   chunks.push(CMD_ALIGN_LEFT, CMD_BOLD_ON)
   const taTotal  = formatPrice(takeawayTotal)
   const delTotal = formatPrice(deliveryTotal)
-  chunks.push(encodeText(pad(`TAKEAWAY  ${takeaways.length} orders`, LINE_WIDTH - taTotal.length)  + taTotal  + '\n'))
-  chunks.push(encodeText(pad(`DELIVERY  ${deliveries.length} orders`, LINE_WIDTH - delTotal.length) + delTotal + '\n'))
+  chunks.push(encodeText(pad(`TAKEAWAY  ${takeaways.length} orders`, LINE_WIDTH - colWidth(taTotal))  + taTotal  + '\n'))
+  chunks.push(encodeText(pad(`DELIVERY  ${deliveries.length} orders`, LINE_WIDTH - colWidth(delTotal)) + delTotal + '\n'))
   chunks.push(CMD_BOLD_OFF)
   chunks.push(encodeText('--------------------------------\n'))
 
@@ -366,7 +397,7 @@ function buildFloatBuffers(job) {
     const mode = j.orderMode === 'delivery' ? '[DEL]' : '[T/A]'
     const tot  = formatPrice(Number(j.total))
     chunks.push(CMD_BOLD_ON)
-    chunks.push(encodeText(pad(`${t}  ${mode}`, LINE_WIDTH - tot.length) + tot + '\n'))
+    chunks.push(encodeText(pad(`${t}  ${mode}`, LINE_WIDTH - colWidth(tot)) + tot + '\n'))
     chunks.push(CMD_BOLD_OFF)
     const names = (j.items || []).slice(0, 3).map(i => i.nameEn).join(', ')
     if (names) chunks.push(encodeText(`  ${names.slice(0, LINE_WIDTH - 2)}\n`))
