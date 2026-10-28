@@ -25,7 +25,7 @@ export default function DuckPortionModal({ item, onConfirm, onCancel }) {
       price:    total,
       category: 'A La Carte',
       details:  [
-        { text: '配薄饼、葱、青瓜及海鲜酱', big: true },
+        { text: '配薄饼、葱、青瓜及海鲜酱', big: false, zh: true },   // small Chinese line
         { text: 'Served with pancakes, leeks, cucumber & hoi sin', big: false },
       ],
     })

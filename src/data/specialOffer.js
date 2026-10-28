@@ -110,21 +110,20 @@ export function buildOfferItems({ people, persons, duckId, soups }) {
     const sauce = byId(SAUCES, effectiveSauceId(main, p.sauceId))
     const rice  = byId(RICE_OPTIONS, p.riceId)
     const note  = p.note?.trim()
-    mainZh.push(`${main?.zh ?? '?'}${sauce?.zh ?? '?'}${note ? ` 备注: ${note}` : ''}`)
-    mainEn.push(`${stripParen(main?.en ?? '?')} · ${sauce?.en ?? '?'}${note ? ` · Note: ${translateNoteToEn(note)}` : ''}`)
+    mainZh.push(`${main?.zh ?? '?'}${sauce?.zh ?? '?'}${note ? ` (${note})` : ''}`)
+    mainEn.push(`${stripParen(main?.en ?? '?')} · ${sauce?.en ?? '?'}${note ? ` (${translateNoteToEn(note)})` : ''}`)
     sideZh.push(rice?.zh ?? '?')
     sideEn.push(stripParen(rice?.en ?? '?'))
   })
   // Mixed starter platter shown at the very top, separated from the mains by a
-  // rule (Chinese block only; the English block stays compact).
+  // rule (Chinese block only; the English block stays compact). No 主菜:/配菜:
+  // headers in Chinese — mains then sides, unindented.
   const RULE = { rule: true }
   const details = [
     { text: '拼盘', big: true },
     RULE,
-    { text: '主菜:', big: true, header: true },
-    ...tally(mainZh).map(text => ({ text: `  ${text}`, big: true })),
-    { text: '配菜:', big: true, header: true },
-    ...tally(sideZh).map(text => ({ text: `  ${text}`, big: true })),
+    ...tally(mainZh).map(text => ({ text, big: true })),
+    ...tally(sideZh).map(text => ({ text, big: true })),
     { text: 'Mix Platter', big: false },
     { text: 'Mains:', big: false, header: true },
     ...tally(mainEn).map(text => ({ text: `  ${text}`, big: false })),
@@ -155,7 +154,8 @@ export function buildOfferItems({ people, persons, duckId, soups }) {
       price:    duck.price,
       category: 'Special Offer',
       isOfferItem: true,
-      details:  [{ text: DUCK_NOTE_ZH, big: true }, { text: DUCK_NOTE, big: false }],
+      // zh: small Chinese line — printed at normal size but kept on Chinese-only tickets
+      details:  [{ text: DUCK_NOTE_ZH, big: false, zh: true }, { text: DUCK_NOTE, big: false }],
     })
   }
 

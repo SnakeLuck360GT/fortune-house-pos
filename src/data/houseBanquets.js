@@ -121,8 +121,8 @@ export function buildBanquetItem({ banquet, people, persons }) {
     const note = p.note?.trim()
     soupZh.push(soup?.zh ?? '?')
     soupEn.push(soup?.en ?? '?')
-    mainZh.push(`${main?.zh ?? '?'}${note ? ` · 备注: ${note}` : ''}`)
-    mainEn.push(`${main?.en ?? '?'}${note ? ` · Note: ${translateNoteToEn(note)}` : ''}`)
+    mainZh.push(`${main?.zh ?? '?'}${note ? ` (${note})` : ''}`)
+    mainEn.push(`${main?.en ?? '?'}${note ? ` (${translateNoteToEn(note)})` : ''}`)
   })
 
   // Shared starters listed under Soups, after the per-person soup choices:
@@ -134,9 +134,9 @@ export function buildBanquetItem({ banquet, people, persons }) {
   const surZh = surcharge > 0 ? [{ text: `重复主菜加收 +£${surcharge.toFixed(2)}`, big: true }] : []
   const surEn = surcharge > 0 ? [{ text: `Duplicate main(s) +£${surcharge.toFixed(2)}`, big: false }] : []
 
-  // Big (Chinese) block: soups first (no 汤: header — each soup carries its
-  // count, e.g. "鸡米汤 ×1"), then each starter (platter, + duck on B) fenced by
-  // a horizontal rule:  soups ─ platter ─ duck ─ mains.
+  // Big (Chinese) block: soups first (each carries its count, e.g. "鸡米汤 ×1"),
+  // then each starter (platter, + duck on B) fenced by a horizontal rule, then
+  // the mains:  soups ─ platter ─ duck ─ mains. No 汤:/主菜: headers.
   // English block stays compact — plain lines, no rules.
   const RULE = { rule: true }
   const starterZhBlock = [...starterZh.flatMap(text => [RULE, { text, big: true }]), RULE]
@@ -145,8 +145,7 @@ export function buildBanquetItem({ banquet, people, persons }) {
   const details = [
     ...tally(soupZh, true).map(text => ({ text, big: true })),
     ...starterZhBlock,
-    { text: '主菜:', big: true, header: true },
-    ...tally(mainZh).map(text => ({ text: `  ${text}`, big: true })),
+    ...tally(mainZh).map(text => ({ text, big: true })),
     { text: `${RICE_INCLUDED.zh} ×${people}`, big: true },
     ...surZh,
     { text: 'Soups:', big: false, header: true },

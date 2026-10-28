@@ -216,13 +216,13 @@ function parseNoteLines(note) {
 }
 
 // ─── Receipt builder ─────────────────────────────────────────────────────────
-// Banquet/offer breakdowns on paper: drop the English lines, and pull each
-// section header onto the same line as its first dish ("主菜:" + "  咕噜鸡" ->
-// "主菜: 咕噜鸡"). Divider rules are kept.
+// Banquet/offer breakdowns on paper: drop the English lines (small Chinese
+// lines marked `zh` are kept), and pull any section header onto the same line
+// as its first dish ("主菜:" + "  咕噜鸡" -> "主菜: 咕噜鸡"). Divider rules are kept.
 function compactDetails(details) {
   const out = []
   details.forEach(d => {
-    if (!d.rule && !d.big) return
+    if (!d.rule && !d.big && !d.zh) return
     const prev = out[out.length - 1]
     if (prev?.header && !prev.rest && !d.header && !d.rule) prev.rest = ` ${d.text.trim()}`
     else out.push({ ...d })
