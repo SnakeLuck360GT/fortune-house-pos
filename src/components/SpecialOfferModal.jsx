@@ -163,8 +163,13 @@ export default function SpecialOfferModal({ initial, onConfirm, onCancel }) {
   )
   const allPersonsDone = persons.every(isPersonComplete)
 
+  // Soups are optional, but if any are added it must be at least 2 in total
+  const soupCount = Object.values(soups).reduce((s, q) => s + q, 0)
+  const soupsOk   = soupCount === 0 || soupCount >= 2
+
   const canAdvance =
-    step.key === 'mains' ? allPersonsDone : true
+    step.key === 'mains' ? allPersonsDone :
+    step.key === 'soups' ? soupsOk : true
 
   function updatePerson(i, next) {
     setPersons(prev => prev.map((p, idx) => (idx === i ? next : p)))
@@ -241,7 +246,7 @@ export default function SpecialOfferModal({ initial, onConfirm, onCancel }) {
 
           {step.key === 'soups' && (
             <div className="so-soups">
-              <p className="so-hint">{formatPrice(SOUP_PRICE)} each · optional</p>
+              <p className="so-hint">{formatPrice(SOUP_PRICE)} each · optional, minimum 2 · 最少两份</p>
               {SOUPS.map(s => (
                 <div key={s.id} className="so-soup-row">
                   <div>
@@ -251,6 +256,7 @@ export default function SpecialOfferModal({ initial, onConfirm, onCancel }) {
                   <Stepper value={soups[s.id] || 0} min={0} onChange={q => changeSoup(s.id, q)} />
                 </div>
               ))}
+              {!soupsOk && <p style={{ color: 'var(--accent-gold)', fontSize: 13, textAlign: 'center', marginTop: 10 }}>Add 1 more soup, or remove it · 请再加一份汤</p>}
             </div>
           )}
 

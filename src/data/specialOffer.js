@@ -51,7 +51,7 @@ export const RICE_OPTIONS = [
 // Optional aromatic crispy duck add-on
 export const DUCK_OPTIONS = [
   { id: 'none',    en: 'No Duck',                    zh: '不加',         price: 0 },
-  { id: 'quarter', en: '¼ Aromatic Crispy Duck',     zh: '四分一片皮鸭', price: 11 },
+  { id: 'quarter', en: '¼ Aromatic Crispy Duck',     zh: '1/4片皮鸭', price: 11 },
   { id: 'half',    en: '½ Aromatic Crispy Duck',     zh: '半只片皮鸭',   price: 22 },
 ]
 export const DUCK_NOTE    = 'Served with pancakes, hoi sin sauce, cucumber & leek'
@@ -100,7 +100,7 @@ export function buildOfferItems({ people, persons, duckId, soups }) {
   // Per-person breakdown for the kitchen ticket. Built as two blocks: the
   // Chinese block (rendered large — the kitchen reads Chinese) comes first,
   // then the English block (small) beneath. Each detail carries { text, big }.
-  // Trimmed kitchen ticket: grouped Mains (meat · sauce per person) then the
+  // Trimmed kitchen ticket: grouped Mains (meat+sauce per person, e.g. 鸡肉士召) then the
   // Side dish for each person. Starter / price recap omitted to cut clutter;
   // repeated choices collapse into "… ×n".
   const stripParen = s => s.replace(/\s*\(.*\)\s*/, '')
@@ -110,7 +110,7 @@ export function buildOfferItems({ people, persons, duckId, soups }) {
     const sauce = byId(SAUCES, effectiveSauceId(main, p.sauceId))
     const rice  = byId(RICE_OPTIONS, p.riceId)
     const note  = p.note?.trim()
-    mainZh.push(`${main?.zh ?? '?'}·${sauce?.zh ?? '?'}${note ? ` · 备注: ${note}` : ''}`)
+    mainZh.push(`${main?.zh ?? '?'}${sauce?.zh ?? '?'}${note ? ` 备注: ${note}` : ''}`)
     mainEn.push(`${stripParen(main?.en ?? '?')} · ${sauce?.en ?? '?'}${note ? ` · Note: ${translateNoteToEn(note)}` : ''}`)
     sideZh.push(rice?.zh ?? '?')
     sideEn.push(stripParen(rice?.en ?? '?'))

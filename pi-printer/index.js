@@ -22,7 +22,11 @@ const PRINTER_IFACE = process.env.PRINTER_INTERFACE || '/dev/usb/lp0'
 const USE_GB2312    = process.env.USE_GB2312 === 'true'  // set true for GB2312 printers
 const TAKEAWAY_COPIES = Math.max(1, parseInt(process.env.TAKEAWAY_COPIES || '3', 10))  // copies per takeaway order
 const DELIVERY_COPIES = Math.max(1, parseInt(process.env.DELIVERY_COPIES || '1', 10))  // copies per delivery order
-const LINE_WIDTH    = 32
+// Columns of normal-size text across the paper: 48 for an 80mm printer (576 dots
+// ÷ 12-dot font), 32 for 58mm. Layout uses one column less, so a line filled
+// right to the edge never triggers the printer's own wrap (which adds a blank line).
+const PAPER_COLS    = parseInt(process.env.PAPER_COLS || '48', 10)
+const LINE_WIDTH    = PAPER_COLS - 1
 // Chinese item/detail/note size as "<width>x<height>" (1-8 each). 2x1 = wide but
 // single height, which roughly halves the paper each Chinese line uses vs 2x2.
 const [ZH_W, ZH_H]  = (process.env.ZH_SIZE || '2x2').split('x').map(n => Math.min(8, Math.max(1, parseInt(n, 10) || 1)))
@@ -75,7 +79,7 @@ const CMD_CHINESE_OFF   = Buffer.from([0x1c, 0x2e])  // FS . — exit Chinese mo
 
 // Divider printed as a tiny raster image (GS v 0): a solid line a few dots tall
 // instead of a full 24-dot text line of dashes, so it uses ~1/3 of the paper.
-const RULE_BYTES = LINE_WIDTH * 12 / 8   // 32 chars × 12 dots = 384 dots wide
+const RULE_BYTES = PAPER_COLS * 12 / 8   // full paper width: 48 cols × 12 dots = 576 dots
 function ruleCmd(thick, pad = 3) {
   const rows = pad + thick + pad
   const data = Buffer.alloc(RULE_BYTES * rows, 0)
@@ -86,6 +90,7 @@ const CMD_RULE          = ruleCmd(2)  // thin divider (was a line of ----)
 const CMD_RULE_HEAVY    = ruleCmd(4)  // thick divider (was a line of ====)
 
 function encodeText(text) {
+  text = text.replace(/¼/g, '1/4').replace(/½/g, '1/2')   // not in GB2312 — would print as "?"
   if (USE_GB2312) {
     try {
       return iconv.encode(text, 'GB2312')
@@ -106,11 +111,13 @@ function pad(str, width) {
   return s + ' '.repeat(width - s.length)
 }
 
+// Pad both sides to exactly `width` columns, so inverted (white-on-black) bands
+// span the full line.
 function center(str, width) {
-  const len = str.length
+  const len = colWidth(str)
   if (len >= width) return str
   const l = Math.floor((width - len) / 2)
-  return ' '.repeat(l) + str
+  return ' '.repeat(l) + str + ' '.repeat(width - len - l)
 }
 
 function formatPrice(p) {
@@ -221,8 +228,10 @@ function buildReceiptBuffers(job) {
   // Delivery customer info
   if (isDelivery && deliveryInfo) {
     if (deliveryInfo.customerName) chunks.push(encodeText(`${deliveryInfo.customerName}\n`))
-    if (deliveryInfo.address)      chunks.push(encodeText(`${deliveryInfo.address}\n`))
-    if (deliveryInfo.driveMinutes) chunks.push(encodeText(`~${deliveryInfo.driveMinutes} min\n`))
+    // Drive time shares the address line to save paper
+    const drive = deliveryInfo.driveMinutes ? ` (~${deliveryInfo.driveMinutes} min)` : ''
+    if (deliveryInfo.address)      chunks.push(encodeText(`${deliveryInfo.address}${drive}\n`))
+    else if (drive)                chunks.push(encodeText(`${drive.trim()}\n`))
   } else if (customerName) {
     chunks.push(encodeText(`${customerName}\n`))
   }
@@ -300,7 +309,7 @@ function buildReceiptBuffers(job) {
   // Total — bold, double width only (half the paper of full double size)
   chunks.push(CMD_BOLD_ON, CMD_WIDE_SIZE)
   const totalStr = formatPrice(total)
-  chunks.push(encodeText(pad('TOTAL:', LINE_WIDTH / 2 - totalStr.length) + totalStr + '\n'))
+  chunks.push(encodeText(pad('TOTAL:', Math.floor(LINE_WIDTH / 2) - totalStr.length) + totalStr + '\n'))
   chunks.push(CMD_NORMAL_SIZE, CMD_BOLD_OFF)
 
   chunks.push(CMD_CUT)
@@ -324,20 +333,20 @@ function buildFloatBuffers(job) {
 
   // ── Dark header (inverted): restaurant name + date ──
   chunks.push(CMD_INVERT_ON, CMD_BOLD_ON, CMD_DOUBLE_SIZE)
-  chunks.push(encodeText(center('Fortune House', LINE_WIDTH * 2) + '\n'))
+  chunks.push(encodeText(center('Fortune House', Math.floor(LINE_WIDTH / 2)) + '\n'))
   chunks.push(CMD_NORMAL_SIZE)
   chunks.push(CMD_DOUBLE_SIZE)
-  chunks.push(encodeText(center('福运楼', LINE_WIDTH * 2) + '\n'))
+  chunks.push(encodeText(center('福运楼', Math.floor(LINE_WIDTH / 2)) + '\n'))
   chunks.push(CMD_NORMAL_SIZE, CMD_BOLD_OFF)
   chunks.push(encodeText(center(`${date}  ${timeStr}`, LINE_WIDTH) + '\n'))
   chunks.push(CMD_INVERT_OFF)
 
   // ── Title band (inverted): DAILY SUMMARY ──
   chunks.push(CMD_INVERT_ON, CMD_BOLD_ON, CMD_DOUBLE_SIZE)
-  chunks.push(encodeText(center('DAILY SUMMARY', LINE_WIDTH * 2) + '\n'))
+  chunks.push(encodeText(center('DAILY SUMMARY', Math.floor(LINE_WIDTH / 2)) + '\n'))
   chunks.push(CMD_NORMAL_SIZE)
   chunks.push(CMD_DOUBLE_SIZE)
-  chunks.push(encodeText(center('日结报告', LINE_WIDTH * 2) + '\n'))
+  chunks.push(encodeText(center('日结报告', Math.floor(LINE_WIDTH / 2)) + '\n'))
   chunks.push(CMD_NORMAL_SIZE, CMD_BOLD_OFF)
   chunks.push(CMD_INVERT_OFF)
   chunks.push(lf(1))
@@ -368,7 +377,7 @@ function buildFloatBuffers(job) {
   chunks.push(encodeText('================================\n'))
   chunks.push(CMD_INVERT_ON, CMD_BOLD_ON, CMD_DOUBLE_SIZE)
   const gStr = formatPrice(grandTotal)
-  chunks.push(encodeText(center(`TOTAL  ${gStr}`, LINE_WIDTH * 2) + '\n'))
+  chunks.push(encodeText(center(`TOTAL  ${gStr}`, Math.floor(LINE_WIDTH / 2)) + '\n'))
   chunks.push(CMD_NORMAL_SIZE, CMD_BOLD_OFF)
   chunks.push(CMD_INVERT_OFF)
 

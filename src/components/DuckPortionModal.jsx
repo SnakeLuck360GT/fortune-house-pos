@@ -5,7 +5,7 @@ const stripParen = s => (s || '').replace(/\s*\(.*\)\s*/, '').trim()
 
 // Quarter is the base price (item.price); half = 2×, whole = 4×.
 const PORTIONS = [
-  { id: 'quarter', en: 'Quarter ¼', zh: '四分一只', mult: 1 },
+  { id: 'quarter', en: 'Quarter ¼', zh: '1/4只', mult: 1 },
   { id: 'half',    en: 'Half ½',    zh: '半只',     mult: 2 },
   { id: 'whole',   en: 'Whole',     zh: '一只',     mult: 4 },
 ]
