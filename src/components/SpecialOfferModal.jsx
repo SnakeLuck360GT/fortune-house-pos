@@ -4,7 +4,7 @@ import NoteModal from './NoteModal.jsx'
 import {
   MIN_PEOPLE, PRICE_PER_PERSON, STARTER,
   MAINS, SAUCES, RICE_OPTIONS, DUCK_OPTIONS, SOUPS, SOUP_PRICE,
-  effectiveSauceId, isPersonComplete, offerTotal, buildOfferItems,
+  effectiveSauceId, isPersonComplete, offerTotal, buildOfferItems, offerDishName,
 } from '../data/specialOffer.js'
 
 const STEPS = [
@@ -270,7 +270,7 @@ export default function SpecialOfferModal({ initial, onConfirm, onCancel }) {
                 const rice  = RICE_OPTIONS.find(r => r.id === p.riceId)
                 return (
                   <div key={i} className="so-review__sub">
-                    P{i + 1}: {main?.en} · {sauce?.en} · {rice?.en}
+                    P{i + 1}: {offerDishName(main, sauce).en} · {rice?.en}
                   </div>
                 )
               })}

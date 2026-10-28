@@ -4,10 +4,11 @@ import { formatPrice } from '../utils/receiptFormatter.js'
 const stripParen = s => (s || '').replace(/\s*\(.*\)\s*/, '').trim()
 
 // Quarter is the base price (item.price); half = 2×, whole = 4×.
+// `ticketZh` is the receipt name: "1/4 鸭".
 const PORTIONS = [
-  { id: 'quarter', en: 'Quarter ¼', zh: '1/4只', mult: 1 },
-  { id: 'half',    en: 'Half ½',    zh: '半只',     mult: 2 },
-  { id: 'whole',   en: 'Whole',     zh: '一只',     mult: 4 },
+  { id: 'quarter', en: 'Quarter ¼', zh: '1/4只', ticketZh: '1/4 鸭', mult: 1 },
+  { id: 'half',    en: 'Half ½',    zh: '半只',  ticketZh: '1/2 鸭', mult: 2 },
+  { id: 'whole',   en: 'Whole',     zh: '一只',  ticketZh: '全鸭',   mult: 4 },
 ]
 
 export default function DuckPortionModal({ item, onConfirm, onCancel }) {
@@ -21,7 +22,7 @@ export default function DuckPortionModal({ item, onConfirm, onCancel }) {
     onConfirm({
       id:       `${item.id}-${portion.id}-${Date.now()}`,
       nameEn:   `${baseEn} (${portion.en})`,
-      nameZh:   `${baseZh} (${portion.zh})`,
+      nameZh:   portion.ticketZh,
       price:    total,
       category: 'A La Carte',
       details:  [

@@ -42,17 +42,17 @@ export const SAUCES = [
 // Side — one per main
 export const RICE_OPTIONS = [
   { id: 'boiled',     en: 'Boiled Rice',         zh: '白饭' },
-  { id: 'eggfried',   en: 'Egg Fried Rice',      zh: '蛋炒饭' },
+  { id: 'eggfried',   en: 'Egg Fried Rice',      zh: '炒饭' },
   { id: 'chips',      en: 'Chips',               zh: '薯条' },
   { id: 'softnoodle', en: 'Plain Noodles',       zh: '净面',     extra: 1.50 },
-  { id: 'spchips',    en: 'Salt & Pepper Chips', zh: '椒盐薯条', extra: 1.50 },
+  { id: 'spchips',    en: 'Salt & Pepper Chips', zh: '召条', extra: 1.50 },
 ]
 
 // Optional aromatic crispy duck add-on
 export const DUCK_OPTIONS = [
   { id: 'none',    en: 'No Duck',                    zh: '不加',         price: 0 },
-  { id: 'quarter', en: '¼ Aromatic Crispy Duck',     zh: '1/4片皮鸭', price: 11 },
-  { id: 'half',    en: '½ Aromatic Crispy Duck',     zh: '半只片皮鸭',   price: 22 },
+  { id: 'quarter', en: '¼ Aromatic Crispy Duck',     zh: '1/4 鸭', price: 11 },
+  { id: 'half',    en: '½ Aromatic Crispy Duck',     zh: '1/2 鸭',     price: 22 },
 ]
 export const DUCK_NOTE    = 'Served with pancakes, hoi sin sauce, cucumber & leek'
 export const DUCK_NOTE_ZH = '配薄饼、海鲜酱、青瓜及葱'
@@ -90,6 +90,16 @@ export function isPersonComplete(person) {
   return Boolean(effectiveSauceId(main, person.sauceId))
 }
 
+const stripParen = s => s.replace(/\s*\(.*\)\s*/, '')
+
+// Sauce first, then the meat: 士召牛肉 / "Green Pepper & Black Bean Beef".
+export function offerDishName(main, sauce) {
+  return {
+    zh: `${(sauce?.zh ?? '?').replace(/[汁酱]$/, '')}${main?.zh ?? '?'}`,   // 黑椒酱 → 黑椒牛肉
+    en: `${(sauce?.en ?? '?').replace(/ Sauce$/, '')} ${stripParen(main?.en ?? '?')}`,
+  }
+}
+
 // Build the order line-items for a completed selection.
 // Returns a flat array; soups are repeated once per unit so the order reducer
 // (which forces quantity:1 on insert and merges duplicate ids) tallies them.
@@ -100,18 +110,18 @@ export function buildOfferItems({ people, persons, duckId, soups }) {
   // Per-person breakdown for the kitchen ticket. Built as two blocks: the
   // Chinese block (rendered large — the kitchen reads Chinese) comes first,
   // then the English block (small) beneath. Each detail carries { text, big }.
-  // Trimmed kitchen ticket: grouped Mains (meat+sauce per person, e.g. 鸡肉士召) then the
+  // Trimmed kitchen ticket: grouped Mains (sauce+meat per person, e.g. 士召鸡肉) then the
   // Side dish for each person. Starter / price recap omitted to cut clutter;
   // repeated choices collapse into "… ×n".
-  const stripParen = s => s.replace(/\s*\(.*\)\s*/, '')
   const mainZh = [], mainEn = [], sideZh = [], sideEn = []
   persons.forEach((p) => {
     const main  = byId(MAINS, p.mainId)
     const sauce = byId(SAUCES, effectiveSauceId(main, p.sauceId))
     const rice  = byId(RICE_OPTIONS, p.riceId)
     const note  = p.note?.trim()
-    mainZh.push(`${main?.zh ?? '?'}${sauce?.zh ?? '?'}${note ? ` (${note})` : ''}`)
-    mainEn.push(`${stripParen(main?.en ?? '?')} · ${sauce?.en ?? '?'}${note ? ` (${translateNoteToEn(note)})` : ''}`)
+    const dish  = offerDishName(main, sauce)
+    mainZh.push(`${dish.zh}${note ? ` (${note})` : ''}`)
+    mainEn.push(`${dish.en}${note ? ` (${translateNoteToEn(note)})` : ''}`)
     sideZh.push(rice?.zh ?? '?')
     sideEn.push(stripParen(rice?.en ?? '?'))
   })

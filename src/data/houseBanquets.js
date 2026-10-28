@@ -31,11 +31,11 @@ export const BANQUETS = [
     ],
     soups: BANQUET_SOUPS,
     mains: [
-      { id: 'im1', en: 'Fried Chicken with XO Spicy Sauce',      zh: 'XO酱炒鸡',   spicy: true, chicken: true },
-      { id: 'im2', en: 'Fillet Steak with Cantonese Sauce',      zh: '中式牛柳' },
-      { id: 'im3', en: 'Crispy Shredded Beef in Chilli Sauce',   zh: '干牛丝', spicy: true },
-      { id: 'im4', en: 'Duck with Lemon Sauce',                  zh: '柠檬鸭' },
-      { id: 'im5', en: 'King Prawn with Ginger & Spring Onion',  zh: '姜葱大虾' },
+      { id: 'im1', en: 'XO Spicy Fried Chicken',                 zh: 'XO酱炒鸡',   spicy: true, chicken: true },
+      { id: 'im2', en: 'Cantonese Fillet Steak',                 zh: '中式牛柳' },
+      { id: 'im3', en: 'Chilli Crispy Shredded Beef',            zh: '干牛丝', spicy: true },
+      { id: 'im4', en: 'Lemon Duck',                             zh: '柠檬鸭' },
+      { id: 'im5', en: 'Ginger & Spring Onion King Prawn',       zh: '姜葱大虾' },
     ],
   },
   {
@@ -55,10 +55,10 @@ export const BANQUETS = [
     soups: BANQUET_SOUPS,
     mains: [
       { id: 'pk1', en: 'Sweet & Sour Chicken',                          zh: '古老鸡', chicken: true },
-      { id: 'pk2', en: 'Sliced Beef with Green Pepper & Black Bean Sauce', zh: '豉椒牛肉' },
-      { id: 'pk3', en: 'Duck in Plum Sauce',                            zh: '梅子鸭' },
-      { id: 'pk4', en: 'Fried King Prawn in Chilli Garlic Sauce',       zh: '蒜辣大虾', spicy: true },
-      { id: 'pk5', en: 'Lamb in Black Pepper Sauce',                    zh: '黑椒羊肉', spicy: true },
+      { id: 'pk2', en: 'Green Pepper & Black Bean Sliced Beef', zh: '豉椒牛肉' },
+      { id: 'pk3', en: 'Plum Duck',                                     zh: '梅子鸭' },
+      { id: 'pk4', en: 'Chilli Garlic Fried King Prawn',                zh: '蒜辣大虾', spicy: true },
+      { id: 'pk5', en: 'Black Pepper Lamb',                             zh: '黑椒羊肉', spicy: true },
     ],
   },
 ]

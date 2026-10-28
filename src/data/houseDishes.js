@@ -31,22 +31,30 @@ export const HOUSE_DISH_SAUCES = [
 
 export const sauceById = id => HOUSE_DISH_SAUCES.find(s => s.id === id)
 
-// Combine the chosen dish + one sauce into an order line item. The dish stays
-// as the item name; the sauce prints on its own line beneath (Chinese large,
-// English small) via the shared details renderer.
+// Split "OK汁(脆炸)" / "Omelette (chips included)" into the name and its bracket.
+const splitParen = s => {
+  const m = s.match(/^(.*?)\s*(\(.*\))$/)
+  return m ? [m[1], m[2]] : [s, '']
+}
+
+// Combine the chosen dish + one sauce into an order line item, sauce first:
+// 士召牛肉片 / "Green Pepper & Blackbean Sliced Beef". Any bracket on the sauce
+// (脆炸, 含薯条) moves to the end so the dish name stays together.
 export function buildHouseDishItem(dish, sauceId) {
   const sauce = sauceById(sauceId)
   if (!sauce) return null
   const extra = sauce.extra || 0
+  const [zhRaw, zhTail] = splitParen(sauce.zh)
+  const zh = zhRaw.replace(/[汁酱]$/, '')   // 咖喱汁 → 咖喱牛肉片, as on the menu
+  const [enRaw, enTail] = splitParen(sauce.en)
+  const shortEn = enRaw.replace(/ Sauce$/, '')
+  const en = shortEn.length > 2 ? shortEn : enRaw   // keep "OK Sauce" readable
+  const dishEn = dish.nameEn.replace(/^Fried /, '')
   return {
     id:       `${dish.id}-${sauce.id}-${Date.now()}`,
-    nameEn:   dish.nameEn,
-    nameZh:   dish.nameZh,
+    nameEn:   `${en} ${dishEn}${enTail ? ` ${enTail}` : ''}`,
+    nameZh:   `${zh}${dish.nameZh}${zhTail}`,
     price:    dish.price + extra,
     category: 'House Dishes',
-    details: [
-      { text: sauce.zh, big: true },
-      { text: sauce.en, big: false },
-    ],
   }
 }
