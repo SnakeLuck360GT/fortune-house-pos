@@ -215,6 +215,20 @@ function parseNoteLines(note) {
   }))
 }
 
+// Chinese notes go in brackets beside the dish ("椒盐鸡翅 (多加辣)"), with their
+// English translations beside the English name. Notes with no Chinese (typed
+// English, e.g. an allergy warning) and Share Box drinks keep their own lines.
+function splitNotes(item) {
+  const notes  = item.note ? parseNoteLines(item.note) : []
+  const beside = item.isShareBox ? [] : notes.filter(n => /[\u3400-\u9fff]/.test(n.zh))
+  const en     = beside.filter(n => n.en !== n.zh).map(n => n.en)
+  return {
+    zhTag: beside.length ? ` (${beside.map(n => n.zh).join(', ')})` : '',
+    enTag: en.length ? ` (${en.join(', ')})` : '',
+    own:   notes.filter(n => !beside.includes(n)),
+  }
+}
+
 // ─── Receipt builder ─────────────────────────────────────────────────────────
 // Banquet/offer breakdowns on paper: drop the English lines (small Chinese
 // lines marked `zh` are kept), and pull any section header onto the same line
@@ -291,11 +305,12 @@ function buildReceiptBuffers(job) {
     // size as the 汤:/主菜: lines and notes. (Putting the normal-size price on
     // the same line made the printer condense/"squish" the title.)
     // Items with no Chinese name skip this line — the English line below has the name.
-    if (item.nameZh) chunks.push(...zhLine(`${qty}× ${item.nameZh}`))
+    const { zhTag, enTag, own } = splitNotes(item)
+    if (item.nameZh) chunks.push(...zhLine(`${qty}× ${item.nameZh}${zhTag}`))
 
     // English name + price on a normal-size line; price right-aligned on the first
     // line, long names wrap underneath (see priceLines).
-    chunks.push(encodeText(priceLines(`  ${qty}× ${item.nameEn}`, price)))
+    chunks.push(encodeText(priceLines(`  ${qty}× ${item.nameEn}${item.nameZh ? enTag : zhTag}`, price)))
 
     // Set-meal breakdown: big Chinese block, compact English block, with
     // horizontal rules and underlined headers (no blank lines, to save paper).
@@ -308,14 +323,11 @@ function buildReceiptBuffers(job) {
       })
     }
 
-    if (item.note) {
-      parseNoteLines(item.note).forEach(({ prefix, zh, en }) => {
-        // Share Box drinks are English-only — print them small, like the other English lines
-        if (item.isShareBox) { chunks.push(encodeText(`  ${prefix} ${en}\n`)); return }
-        chunks.push(...zhLine(`${prefix} ${zh}`))
-        if (en !== zh && !zhOnly) chunks.push(encodeText(wrapText(`  ${prefix} ${en}`, LINE_WIDTH)))
-      })
-    }
+    // Notes that didn't go beside the dish: Share Box drinks small, typed English big
+    own.forEach(({ prefix, zh, en }) => {
+      if (item.isShareBox) chunks.push(encodeText(`  ${prefix} ${en}\n`))
+      else                 chunks.push(...zhLine(`${prefix} ${zh}`))
+    })
   })
 
   chunks.push(CMD_RULE)

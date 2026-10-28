@@ -42,6 +42,20 @@ function parseNoteLines(note) {
     .map(zh => ({ prefix: zh.startsWith('不') ? '-' : '+', zh, en: ZH_TO_EN[zh] ?? zh }))
 }
 
+// Chinese notes go in brackets beside the dish ("椒盐鸡翅 (多加辣)"), with their
+// English translations beside the English name. Notes with no Chinese (typed
+// English, e.g. an allergy warning) and Share Box drinks keep their own lines.
+function splitNotes(item) {
+  const notes  = item.note ? parseNoteLines(item.note) : []
+  const beside = item.isShareBox ? [] : notes.filter(n => /[\u3400-\u9fff]/.test(n.zh))
+  const en     = beside.filter(n => n.en !== n.zh).map(n => n.en)
+  return {
+    zhTag: beside.length ? ` (${beside.map(n => n.zh).join(', ')})` : '',
+    enTag: en.length ? ` (${en.join(', ')})` : '',
+    own:   notes.filter(n => !beside.includes(n)),
+  }
+}
+
 // Banquet/offer breakdowns on paper: drop the English lines (small Chinese
 // lines marked `zh` are kept), and pull any section header onto the same line
 // as its first dish ("主菜:" + "  咕噜鸡" -> "主菜: 咕噜鸡"). Divider rules are kept.
@@ -90,8 +104,9 @@ export function buildReceiptLines({ items, total, tableNumber, discount, deliver
     // back, comment out the line below and uncomment the one after it.
     const zhOnly = item.isOfferItem
     // const zhOnly = false
-    lines.push({ type: 'zh', text: zhName, quantity: qty })
-    lines.push({ type: 'en', text: `${qty}× ${item.nameEn}`, price })
+    const { zhTag, enTag, own } = splitNotes(item)
+    lines.push({ type: 'zh', text: `${zhName}${zhTag}`, quantity: qty })
+    lines.push({ type: 'en', text: `${qty}× ${item.nameEn}${enTag}`, price })
     if (Array.isArray(item.details)) {
       const isBlock = item.details.length > 2   // multi-line breakdown vs single zh/en pair
       ;(zhOnly ? compactDetails(item.details) : item.details).forEach(d => {
@@ -99,14 +114,10 @@ export function buildReceiptLines({ items, total, tableNumber, discount, deliver
         lines.push({ type: 'detail', text: d.text, rest: d.rest, big: d.big, block: isBlock, header: d.header })
       })
     }
-    if (item.note) {
-      parseNoteLines(item.note).forEach(({ prefix, zh, en }) => {
-        // Share Box drinks are English-only — show them small, like the other English lines
-        if (item.isShareBox) { lines.push({ type: 'note-en', text: `${prefix} ${en}` }); return }
-        lines.push({ type: 'note-zh', text: `${prefix} ${zh}` })
-        if (en !== zh && !zhOnly) lines.push({ type: 'note-en', text: `${prefix} ${en}` })
-      })
-    }
+    // Notes that didn't go beside the dish: Share Box drinks small, typed English big
+    own.forEach(({ prefix, zh, en }) => {
+      lines.push(item.isShareBox ? { type: 'note-en', text: `${prefix} ${en}` } : { type: 'note-zh', text: `${prefix} ${zh}` })
+    })
   })
 
   lines.push({ type: 'sep-light' })
