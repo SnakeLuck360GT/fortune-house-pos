@@ -24,12 +24,10 @@ export function formatPrice(p) {
 }
 
 // Ready time (takeaway, +20 min) / delivery window (+40–60 min) for the receipt.
-function etaLines(ts, isDelivery) {
+function etaText(ts, isDelivery) {
   const fmt = d => d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
   const at  = mins => fmt(new Date(ts.getTime() + mins * 60000))
-  return isDelivery
-    ? [`Delivery ${at(40)}-${at(60)}`]
-    : [`Ready ${at(20)}`]
+  return isDelivery ? `Delivery ${at(40)}-${at(60)}` : `Ready ${at(20)}`
 }
 
 // Split a comma-separated note into individual lines with +/- prefix and English label.
@@ -48,7 +46,7 @@ function parseNoteLines(note) {
 // type: 'sep-heavy' | 'sep-light' | 'blank' | 'center' | 'zh' | 'en' | 'note' | 'subtotal' | 'total' | 'footer'
 export function buildReceiptLines({ items, total, tableNumber, discount, deliveryFee, orderMode, deliveryInfo, phone, customerName, timestamp }) {
   const ts = timestamp ? new Date(timestamp) : new Date()
-  const dateStr = ts.toLocaleDateString('en-GB')
+  const dateStr = ts.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })
   const timeStr = ts.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
   const isDelivery = orderMode === 'delivery'
 
@@ -57,7 +55,7 @@ export function buildReceiptLines({ items, total, tableNumber, discount, deliver
   lines.push({ type: 'sep-heavy' })
   // Order type banner — at the very top, bilingual (no restaurant name)
   lines.push({ type: 'order-type', text: isDelivery ? '🛵  DELIVERY  外送' : '🛍  COLLECTION  自取', isDelivery })
-  lines.push({ type: 'center', text: `${dateStr}  ${timeStr}` })
+  lines.push({ type: 'eta', text: `${dateStr} ${timeStr} ${etaText(ts, isDelivery)}` })
   if (tableNumber) lines.push({ type: 'center', text: `Table: ${tableNumber}` })
 
   if (isDelivery && deliveryInfo) {
@@ -67,7 +65,6 @@ export function buildReceiptLines({ items, total, tableNumber, discount, deliver
     lines.push({ type: 'center', text: customerName })
   }
   if (phone) lines.push({ type: 'center', text: `Tel: ${phone}` })
-  etaLines(ts, isDelivery).forEach(text => lines.push({ type: 'eta', text }))
   lines.push({ type: 'sep-heavy' })
 
   items.forEach(item => {
@@ -109,7 +106,6 @@ export function buildReceiptLines({ items, total, tableNumber, discount, deliver
   }
 
   lines.push({ type: 'total', price: formatPrice(total) })
-  lines.push({ type: 'sep-heavy' })
 
   return lines
 }

@@ -26,9 +26,9 @@ const LINE_WIDTH    = 32
 // Chinese item/detail/note size as "<width>x<height>" (1-8 each). 2x1 = wide but
 // single height, which roughly halves the paper each Chinese line uses vs 2x2.
 const [ZH_W, ZH_H]  = (process.env.ZH_SIZE || '2x2').split('x').map(n => Math.min(8, Math.max(1, parseInt(n, 10) || 1)))
-// Dots fed per normal-height line (printer default is ~30-34). Lower = less gap
-// between lines. 0 = leave the printer's default spacing.
-const LINE_SPACING  = parseInt(process.env.LINE_SPACING || '28', 10)
+// Dots fed per normal-height line (printer default is ~30-34). 24 = the font's
+// own height, i.e. no gap between lines. 0 = leave the printer's default spacing.
+const LINE_SPACING  = parseInt(process.env.LINE_SPACING || '24', 10)
 const LOGO_BUFFER   = null   // optional ESC/POS raster logo for the daily summary (none for now)
 
 // ─── Printer setup ──────────────────────────────────────────────────────────
@@ -68,7 +68,7 @@ const CMD_INVERT_ON     = Buffer.from([0x1d, 0x42, 0x01])  // white on black
 const CMD_INVERT_OFF    = Buffer.from([0x1d, 0x42, 0x00])
 const CMD_UNDERLINE_ON  = Buffer.from([0x1b, 0x2d, 0x01])
 const CMD_UNDERLINE_OFF = Buffer.from([0x1b, 0x2d, 0x00])
-const CMD_CUT           = Buffer.from([0x1d, 0x56, 0x41, 0x00])  // partial cut
+const CMD_CUT           = Buffer.from([0x1d, 0x56, 0x42, 0x00])  // feed just far enough to reach the cutter, then partial cut
 const CMD_LF            = Buffer.from([0x0a])
 const CMD_CHINESE_ON    = Buffer.from([0x1c, 0x26])  // FS & — enter Chinese (GB2312) mode
 const CMD_CHINESE_OFF   = Buffer.from([0x1c, 0x2e])  // FS . — exit Chinese mode
@@ -120,12 +120,10 @@ function getItemName(item, lang) {
 }
 
 // Estimated ready (takeaway, +20 min) / delivery (+40–60 min) time.
-function etaLines(ts, isDelivery) {
+function etaText(ts, isDelivery) {
   const fmt = d => d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
   const at  = mins => fmt(new Date(ts.getTime() + mins * 60000))
-  return isDelivery
-    ? [`Delivery ${at(40)}-${at(60)}`]
-    : [`Ready ${at(20)}`]
+  return isDelivery ? `Delivery ${at(40)}-${at(60)}` : `Ready ${at(20)}`
 }
 
 // ─── Note helpers ────────────────────────────────────────────────────────────
@@ -153,7 +151,7 @@ function buildReceiptBuffers(job) {
   const { items, total, tableNumber, discount, deliveryFee, orderId, timestamp,
           orderMode, deliveryInfo, phone, customerName, lang = 'en' } = job
   const ts = timestamp ? new Date(timestamp) : new Date()
-  const dateStr = ts.toLocaleDateString('en-GB')
+  const dateStr = ts.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })
   const timeStr = ts.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
   const isDelivery = orderMode === 'delivery'
 
@@ -169,7 +167,8 @@ function buildReceiptBuffers(job) {
   chunks.push(encodeText(isDelivery ? 'DELIVERY 外送\n' : 'COLLECTION 自取\n'))
   chunks.push(CMD_NORMAL_SIZE, CMD_BOLD_OFF)
 
-  chunks.push(encodeText(`${dateStr}  ${timeStr}\n`))
+  // Date, order time and ready/delivery time share one line to save paper
+  chunks.push(encodeText(`${dateStr} ${timeStr} `), CMD_BOLD_ON, encodeText(`${etaText(ts, isDelivery)}\n`), CMD_BOLD_OFF)
   if (tableNumber) chunks.push(encodeText(`Table: ${tableNumber}\n`))
 
   // Delivery customer info
@@ -186,11 +185,6 @@ function buildReceiptBuffers(job) {
   if (tel) {
     chunks.push(CMD_BOLD_ON, encodeText(`Tel: ${tel}\n`), CMD_BOLD_OFF)
   }
-
-  // Estimated ready / delivery time
-  chunks.push(CMD_BOLD_ON)
-  etaLines(ts, isDelivery).forEach(line => chunks.push(encodeText(line + '\n')))
-  chunks.push(CMD_BOLD_OFF)
 
   chunks.push(encodeText('================================\n'))
   chunks.push(CMD_ALIGN_LEFT)
@@ -263,9 +257,6 @@ function buildReceiptBuffers(job) {
   chunks.push(encodeText(pad('TOTAL:', LINE_WIDTH / 2 - totalStr.length) + totalStr + '\n'))
   chunks.push(CMD_NORMAL_SIZE, CMD_BOLD_OFF)
 
-  chunks.push(encodeText('================================\n'))
-
-  chunks.push(lf(4))
   chunks.push(CMD_CUT)
 
   return Buffer.concat(chunks)
@@ -335,7 +326,7 @@ function buildFloatBuffers(job) {
   chunks.push(CMD_NORMAL_SIZE, CMD_BOLD_OFF)
   chunks.push(CMD_INVERT_OFF)
 
-  chunks.push(lf(4), CMD_CUT)
+  chunks.push(CMD_CUT)
 
   return Buffer.concat(chunks)
 }
