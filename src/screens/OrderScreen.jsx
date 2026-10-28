@@ -10,6 +10,7 @@ import BanquetModal from '../components/BanquetModal.jsx'
 import HouseDishModal from '../components/HouseDishModal.jsx'
 import PlatterModal from '../components/PlatterModal.jsx'
 import DuckPortionModal from '../components/DuckPortionModal.jsx'
+import { wakePrinter } from '../utils/wakePrinter.js'
 import { useMenu }  from '../hooks/useMenu.js'
 import { useOrder } from '../hooks/useOrder.js'
 
@@ -172,6 +173,7 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
         body: JSON.stringify(job),
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      wakePrinter(job.orderId)
       showToast(t.jobSent, 'success')
       order.clearOrder()
       resetInstances()

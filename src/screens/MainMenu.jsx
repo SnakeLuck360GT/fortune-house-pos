@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { RESTAURANT_NAME, RESTAURANT_NAME_ZH } from '../data/menu.js'
 import { formatPrice } from '../utils/receiptFormatter.js'
 import PinModal from '../components/PinModal.jsx'
+import { wakePrinter } from '../utils/wakePrinter.js'
 
 function AboutModal({ onClose, t }) {
   return (
@@ -155,6 +156,7 @@ export default function MainMenu({ onNavigate, t, settings }) {
           floatSummary: floatData,
         }),
       })
+      wakePrinter('float')
       setFloatData(null)
     } catch (err) {
       console.error('Float print failed:', err)

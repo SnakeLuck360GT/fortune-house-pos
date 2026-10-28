@@ -1,6 +1,6 @@
 # Fortune House — Raspberry Pi Printer Bridge
 
-This script runs on a Raspberry Pi Zero 2W and polls the Netlify print queue every 2 seconds. When a job appears, it converts the order to ESC/POS commands and sends them to a USB thermal printer.
+This script runs on a Raspberry Pi Zero 2W and listens for push notifications (via ntfy.sh) that the web app sends whenever an order is queued. It then fetches the job from Netlify, it converts the order to ESC/POS commands and sends them to a USB thermal printer.
 
 ---
 
@@ -84,11 +84,12 @@ Paste this, editing the values:
 ```
 API_BASE=https://your-site.netlify.app
 PRINTER_INTERFACE=/dev/usb/lp0
-POLL_MS=2000
 USE_GB2312=false
 ```
 
 **`API_BASE`** — your Netlify site URL (from the Netlify dashboard). No trailing slash.
+
+**`NTFY_TOPIC`** (optional) — the ntfy.sh topic the web app publishes wake-ups to. Defaults to the same topic as the web app (`src/utils/wakePrinter.js`); if you change it, set `VITE_NTFY_TOPIC` in Netlify to match. `FALLBACK_POLL_MS` (default 15 min, `0` = off) is a rare safety-net check in case a wake-up is missed. `POLL_MS` is no longer used.
 
 **`PRINTER_INTERFACE`** — the USB device file for the printer. To find it:
 ```bash
@@ -218,7 +219,8 @@ echo 'SUBSYSTEM=="usb", ATTRS{idVendor}=="XXXX", MODE="0666"' | sudo tee /etc/ud
 - Set `USE_GB2312=true` in your `.env` file and restart
 - Most cheap 58mm printers need GB2312 encoding
 
-### Jobs not appearing (polling returns empty)
+### Jobs not appearing
+- Check the logs show `[PUSH] Connected` — if not, the Pi can't reach ntfy.sh
 - Check `API_BASE` is correct and your Netlify site is deployed
 - Test manually: `curl https://your-site.netlify.app/api/jobs`
 - Make sure the Pi has internet access: `ping google.com`

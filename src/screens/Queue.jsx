@@ -3,6 +3,7 @@ import HomeButton from '../components/HomeButton.jsx'
 import ReceiptPreview from '../components/ReceiptPreview.jsx'
 import { formatPrice } from '../utils/receiptFormatter.js'
 import PinModal from '../components/PinModal.jsx'
+import { wakePrinter } from '../utils/wakePrinter.js'
 
 function statusBadge(status) {
   return <span className={`queue-badge queue-badge--${status}`}>{status}</span>
@@ -201,6 +202,7 @@ export default function Queue({ onNavigate, settings, t }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ jobId, resetToPending: true }),
       })
+      wakePrinter(jobId)
       fetchJobs()
     } catch (err) {
       console.error('Retry failed:', err)

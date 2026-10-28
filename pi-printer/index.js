@@ -1,8 +1,9 @@
 /**
  * Fortune House — Raspberry Pi Printer Bridge
  *
- * Polls the Netlify job queue every 2 seconds and prints pending jobs
- * to a USB thermal printer using ESC/POS commands.
+ * Waits for push notifications (ntfy.sh) that a job was queued, then fetches
+ * pending jobs from Netlify and prints them to a USB thermal printer using
+ * ESC/POS commands. No constant polling, so Netlify only gets hit per order.
  *
  * Setup: see README.md
  */
@@ -14,7 +15,9 @@ const fetch          = require('node-fetch')
 
 // ─── Configuration ──────────────────────────────────────────────────────────
 const API_BASE      = process.env.API_BASE || 'https://your-site.netlify.app'
-const POLL_MS       = parseInt(process.env.POLL_MS || '2000', 10)
+const NTFY_URL      = (process.env.NTFY_URL || 'https://ntfy.sh').replace(/\/$/, '')
+const NTFY_TOPIC    = process.env.NTFY_TOPIC || 'fortunehouse-print-VuobJYS9XKBh'  // must match VITE_NTFY_TOPIC in the web app
+const FALLBACK_POLL_MS = parseInt(process.env.FALLBACK_POLL_MS || String(15 * 60 * 1000), 10)  // safety-net poll; 0 disables
 const PRINTER_IFACE = process.env.PRINTER_INTERFACE || '/dev/usb/lp0'
 const USE_GB2312    = process.env.USE_GB2312 === 'true'  // set true for GB2312 printers
 const TAKEAWAY_COPIES = Math.max(1, parseInt(process.env.TAKEAWAY_COPIES || '3', 10))  // copies per takeaway order
@@ -388,38 +391,98 @@ async function markFailed(jobId, error) {
   })
 }
 
-// ─── Main poll loop ───────────────────────────────────────────────────────────
+// ─── Job processing ───────────────────────────────────────────────────────────
 let processing = false
+let pollAgain  = false
 
 async function poll() {
-  if (processing) return
+  // A wake-up that arrives mid-print triggers another pass once we're done
+  if (processing) { pollAgain = true; return }
+  processing = true
 
   try {
-    const jobs = await fetchPendingJobs()
+    do {
+      pollAgain = false
+      const jobs = await fetchPendingJobs()
+      if (jobs.length === 0) continue
 
-    if (jobs.length === 0) return
+      console.log(`[POLL] ${jobs.length} pending job(s) found`)
 
-    console.log(`[POLL] ${jobs.length} pending job(s) found`)
-    processing = true
-
-    for (const job of jobs) {
-      try {
-        await printJob(job)
-        await markComplete(job.jobId)
-        console.log(`[OK]   ${job.jobId} marked as printed`)
-      } catch (err) {
-        console.error(`[FAIL] ${job.jobId}:`, err.message)
-        await markFailed(job.jobId, err.message).catch(() => {})
+      for (const job of jobs) {
+        try {
+          await printJob(job)
+          await markComplete(job.jobId)
+          console.log(`[OK]   ${job.jobId} marked as printed`)
+        } catch (err) {
+          console.error(`[FAIL] ${job.jobId}:`, err.message)
+          await markFailed(job.jobId, err.message).catch(() => {})
+        }
+        // Brief pause between jobs
+        await new Promise(r => setTimeout(r, 500))
       }
-      // Brief pause between jobs
-      await new Promise(r => setTimeout(r, 500))
-    }
+    } while (pollAgain)
   } catch (err) {
     if (!err.message.includes('ECONNREFUSED')) {
       console.error('[POLL ERROR]', err.message)
     }
   } finally {
     processing = false
+  }
+}
+
+// ─── Push listener (ntfy.sh) ──────────────────────────────────────────────────
+// Holds one long-lived streaming connection to ntfy. The web app publishes to
+// the topic after queueing a job, and we only call Netlify when that happens.
+const STALL_MS = 2 * 60 * 1000  // ntfy sends keepalives every ~45s; reconnect if silent this long
+
+async function listen() {
+  let retryMs = 1000
+
+  while (true) {
+    const controller = new AbortController()
+    let stallTimer
+    const resetStall = () => {
+      clearTimeout(stallTimer)
+      stallTimer = setTimeout(() => controller.abort(), STALL_MS)
+    }
+
+    try {
+      resetStall()
+      const res = await fetch(`${NTFY_URL}/${NTFY_TOPIC}/json`, { signal: controller.signal })
+      if (!res.ok) throw new Error(`ntfy returned ${res.status}`)
+
+      let buf = ''
+      for await (const chunk of res.body) {
+        resetStall()
+        buf += chunk.toString()
+        let nl
+        while ((nl = buf.indexOf('\n')) >= 0) {
+          const line = buf.slice(0, nl).trim()
+          buf = buf.slice(nl + 1)
+          if (!line) continue
+
+          let msg
+          try { msg = JSON.parse(line) } catch { continue }
+
+          if (msg.event === 'open') {
+            console.log('[PUSH] Connected — waiting for jobs')
+            retryMs = 1000
+            poll()  // catch anything queued while we were disconnected
+          } else if (msg.event === 'message') {
+            console.log(`[PUSH] Wake-up received (${msg.message})`)
+            poll()
+          }
+        }
+      }
+      throw new Error('stream closed')
+    } catch (err) {
+      console.error('[PUSH] Disconnected:', controller.signal.aborted ? 'no keepalive' : err.message)
+    } finally {
+      clearTimeout(stallTimer)
+    }
+
+    await new Promise(r => setTimeout(r, retryMs))
+    retryMs = Math.min(retryMs * 2, 60000)
   }
 }
 
@@ -430,9 +493,10 @@ console.log(`  API:      ${API_BASE}`)
 console.log(`  Printer:  ${PRINTER_IFACE}`)
 console.log(`  Encoding: ${USE_GB2312 ? 'GB2312' : 'UTF-8'}`)
 console.log(`  Copies:   takeaway ${TAKEAWAY_COPIES}, delivery ${DELIVERY_COPIES}`)
-console.log(`  Poll:     every ${POLL_MS}ms`)
+console.log(`  Push:     ${NTFY_URL}/${NTFY_TOPIC}`)
+console.log(`  Fallback: ${FALLBACK_POLL_MS ? `poll every ${Math.round(FALLBACK_POLL_MS / 60000)} min` : 'off'}`)
 console.log('===========================================')
 
-// Initial poll, then interval
-poll()
-setInterval(poll, POLL_MS)
+// Listener polls once on connect, then only on wake-ups (plus the rare safety net)
+listen()
+if (FALLBACK_POLL_MS > 0) setInterval(poll, FALLBACK_POLL_MS)

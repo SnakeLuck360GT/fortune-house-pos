@@ -2,6 +2,7 @@ import { useState } from 'react'
 import HomeButton from '../components/HomeButton.jsx'
 import ReceiptPreview from '../components/ReceiptPreview.jsx'
 import PinModal from '../components/PinModal.jsx'
+import { wakePrinter } from '../utils/wakePrinter.js'
 
 const SAMPLE_ITEMS = [
   { id: 'rc05', nameEn: 'Chicken Fried Rice',          nameZh: '鸡肉炒饭', price: 9.00,  quantity: 2, category: 'Rice',      note: '' },
@@ -51,6 +52,7 @@ export default function Settings({ onNavigate, settings, onSaveSettings, lang, s
         }),
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      wakePrinter('test')
     } catch (err) {
       console.error('Test print failed:', err)
     } finally {
