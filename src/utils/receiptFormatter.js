@@ -105,8 +105,9 @@ export function buildReceiptLines({ items, total, tableNumber, discount, deliver
     const zhOnly = item.isOfferItem
     // const zhOnly = false
     const { zhTag, enTag, own } = splitNotes(item)
-    lines.push({ type: 'zh', text: `${zhName}${zhTag}`, quantity: qty, qtyLabel: item.qtyLabel })
-    lines.push({ type: 'en', text: `${qty}× ${item.nameEn}${enTag}`, price })
+    const plus = item.isOfferExtra ? '+' : ''   // special-offer add-ons (duck, soups)
+    lines.push({ type: 'zh', text: `${zhName}${zhTag}`, quantity: qty, qtyLabel: `${plus}${item.qtyLabel ?? `${qty}×`}` })
+    lines.push({ type: 'en', text: `${plus}${qty}× ${item.nameEn}${enTag}`, price })
     if (Array.isArray(item.details)) {
       const isBlock = item.details.length > 2   // multi-line breakdown vs single zh/en pair
       ;(zhOnly ? compactDetails(item.details) : item.details).forEach(d => {

@@ -307,11 +307,12 @@ function buildReceiptBuffers(job) {
     // the same line made the printer condense/"squish" the title.)
     // Items with no Chinese name skip this line — the English line below has the name.
     const { zhTag, enTag, own } = splitNotes(item)
-    if (item.nameZh) chunks.push(...zhLine(`${item.qtyLabel ?? `${qty}×`} ${item.nameZh}${zhTag}`))
+    const plus = item.isOfferExtra ? '+' : ''   // special-offer add-ons (duck, soups)
+    if (item.nameZh) chunks.push(...zhLine(`${plus}${item.qtyLabel ?? `${qty}×`} ${item.nameZh}${zhTag}`))
 
     // English name + price on a normal-size line; price right-aligned on the first
     // line, long names wrap underneath (see priceLines).
-    chunks.push(encodeText(priceLines(`  ${qty}× ${item.nameEn}${item.nameZh ? enTag : zhTag}`, price)))
+    chunks.push(encodeText(priceLines(`  ${plus}${qty}× ${item.nameEn}${item.nameZh ? enTag : zhTag}`, price)))
 
     // Set-meal breakdown: big Chinese block, compact English block, with
     // horizontal rules and underlined headers (no blank lines, to save paper).

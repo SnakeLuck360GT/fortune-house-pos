@@ -155,6 +155,7 @@ export function buildOfferItems({ people, persons, duckId, soups }) {
       price:    duck.price,
       category: 'Special Offer',
       isOfferItem: true,
+      isOfferExtra: true,   // specially priced add-on — receipt shows "+1×"
       // zh: small Chinese line — printed at normal size but kept on Chinese-only tickets
       details:  [{ text: DUCK_NOTE_ZH, big: false, zh: true }, { text: DUCK_NOTE, big: false }],
     })
@@ -171,6 +172,7 @@ export function buildOfferItems({ people, persons, duckId, soups }) {
         price:    SOUP_PRICE,
         category: 'Special Offer',
         isOfferItem: true,
+        isOfferExtra: true,   // specially priced add-on — receipt shows "+1×"
       })
     }
   })
