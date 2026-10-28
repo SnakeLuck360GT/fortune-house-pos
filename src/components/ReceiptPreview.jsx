@@ -45,8 +45,10 @@ export default function ReceiptPreview({ items, total, tableNumber, discount, de
             const cls = [
               line.big ? 'rp-detail-zh' : 'rp-detail-en',
               !line.big && line.block ? 'rp-detail-block' : '',
-              line.header ? 'rp-detail-header' : '',
+              line.header && !line.rest ? 'rp-detail-header' : '',
             ].filter(Boolean).join(' ')
+            // Header merged with its first dish: underline just the header part
+            if (line.rest) return <div key={i} className={cls}><span className="rp-detail-header">{line.text}</span>{line.rest}</div>
             return <div key={i} className={cls}>{line.text}</div>
           }
           case 'note-zh':

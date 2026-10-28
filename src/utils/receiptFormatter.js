@@ -44,6 +44,20 @@ function parseNoteLines(note) {
 
 // Returns a structured array of line objects for rich rendering in ReceiptPreview.
 // type: 'sep-heavy' | 'sep-light' | 'blank' | 'center' | 'zh' | 'en' | 'note' | 'subtotal' | 'total' | 'footer'
+// Banquet/offer breakdowns on paper: drop the English lines, and pull each
+// section header onto the same line as its first dish ("主菜:" + "  咕噜鸡" ->
+// "主菜: 咕噜鸡"). Divider rules are kept.
+function compactDetails(details) {
+  const out = []
+  details.forEach(d => {
+    if (!d.rule && !d.big) return
+    const prev = out[out.length - 1]
+    if (prev?.header && !prev.rest && !d.header && !d.rule) prev.rest = ` ${d.text.trim()}`
+    else out.push({ ...d })
+  })
+  return out
+}
+
 export function buildReceiptLines({ items, total, tableNumber, discount, deliveryFee, orderMode, deliveryInfo, phone, customerName, timestamp }) {
   const ts = timestamp ? new Date(timestamp) : new Date()
   const dateStr = ts.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })
@@ -71,18 +85,17 @@ export function buildReceiptLines({ items, total, tableNumber, discount, deliver
     const price  = formatPrice((item.price + (item.notePrice || 0)) * item.quantity)
     const zhName = item.nameZh || item.nameEn
     const qty    = item.peopleQty ?? item.quantity   // set-menus show "×people"
-    // Banquets + special offer print Chinese only. To bring the English back,
-    // comment out the line below and uncomment the one after it.
+    // Banquets + special offer print Chinese only, compacted (see compactDetails).
+    // To bring the English back, comment out the line below and uncomment the one after it.
     const zhOnly = item.isOfferItem
     // const zhOnly = false
     lines.push({ type: 'zh', text: zhName, quantity: qty })
     lines.push({ type: 'en', text: zhOnly ? '' : `${qty}× ${item.nameEn}`, price })
     if (Array.isArray(item.details)) {
       const isBlock = item.details.length > 2   // multi-line breakdown vs single zh/en pair
-      item.details.forEach(d => {
+      ;(zhOnly ? compactDetails(item.details) : item.details).forEach(d => {
         if (d.rule) { lines.push({ type: 'detail-rule' }); return }
-        if (zhOnly && !d.big) return
-        lines.push({ type: 'detail', text: d.text, big: d.big, block: isBlock, header: d.header })
+        lines.push({ type: 'detail', text: d.text, rest: d.rest, big: d.big, block: isBlock, header: d.header })
       })
     }
     if (item.note) {

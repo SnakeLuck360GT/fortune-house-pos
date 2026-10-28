@@ -73,6 +73,18 @@ const CMD_LF            = Buffer.from([0x0a])
 const CMD_CHINESE_ON    = Buffer.from([0x1c, 0x26])  // FS & — enter Chinese (GB2312) mode
 const CMD_CHINESE_OFF   = Buffer.from([0x1c, 0x2e])  // FS . — exit Chinese mode
 
+// Divider printed as a tiny raster image (GS v 0): a solid line a few dots tall
+// instead of a full 24-dot text line of dashes, so it uses ~1/3 of the paper.
+const RULE_BYTES = LINE_WIDTH * 12 / 8   // 32 chars × 12 dots = 384 dots wide
+function ruleCmd(thick, pad = 3) {
+  const rows = pad + thick + pad
+  const data = Buffer.alloc(RULE_BYTES * rows, 0)
+  data.fill(0xff, RULE_BYTES * pad, RULE_BYTES * (pad + thick))
+  return Buffer.concat([Buffer.from([0x1d, 0x76, 0x30, 0x00, RULE_BYTES & 0xff, RULE_BYTES >> 8, rows & 0xff, rows >> 8]), data])
+}
+const CMD_RULE          = ruleCmd(2)  // thin divider (was a line of ----)
+const CMD_RULE_HEAVY    = ruleCmd(4)  // thick divider (was a line of ====)
+
 function encodeText(text) {
   if (USE_GB2312) {
     try {
@@ -147,6 +159,20 @@ function parseNoteLines(note) {
 }
 
 // ─── Receipt builder ─────────────────────────────────────────────────────────
+// Banquet/offer breakdowns on paper: drop the English lines, and pull each
+// section header onto the same line as its first dish ("主菜:" + "  咕噜鸡" ->
+// "主菜: 咕噜鸡"). Divider rules are kept.
+function compactDetails(details) {
+  const out = []
+  details.forEach(d => {
+    if (!d.rule && !d.big) return
+    const prev = out[out.length - 1]
+    if (prev?.header && !prev.rest && !d.header && !d.rule) prev.rest = ` ${d.text.trim()}`
+    else out.push({ ...d })
+  })
+  return out
+}
+
 function buildReceiptBuffers(job) {
   const { items, total, tableNumber, discount, deliveryFee, orderId, timestamp,
           orderMode, deliveryInfo, phone, customerName, lang = 'en' } = job
@@ -186,8 +212,7 @@ function buildReceiptBuffers(job) {
     chunks.push(CMD_BOLD_ON, encodeText(`Tel: ${tel}\n`), CMD_BOLD_OFF)
   }
 
-  chunks.push(encodeText('================================\n'))
-  chunks.push(CMD_ALIGN_LEFT)
+  chunks.push(CMD_ALIGN_LEFT, CMD_RULE_HEAVY)
 
   // Items — flat bilingual list, exactly mirroring the on-screen preview:
   // Chinese name (double height) + "×qty", price right-aligned; English name
@@ -196,8 +221,8 @@ function buildReceiptBuffers(job) {
     const price  = formatPrice((item.price + (item.notePrice || 0)) * item.quantity)
     const zhName = item.nameZh || item.nameEn
     const qty    = item.peopleQty ?? item.quantity   // set-menus show "×people"
-    // Banquets + special offer print Chinese only. To bring the English back,
-    // comment out the line below and uncomment the one after it.
+    // Banquets + special offer print Chinese only, compacted (see compactDetails).
+    // To bring the English back, comment out the line below and uncomment the one after it.
     const zhOnly = item.isOfferItem
     // const zhOnly = false
 
@@ -215,11 +240,10 @@ function buildReceiptBuffers(job) {
     // Set-meal breakdown: big Chinese block, compact English block, with
     // horizontal rules and underlined headers (no blank lines, to save paper).
     if (Array.isArray(item.details)) {
-      item.details.forEach(d => {
-        if (d.rule) { chunks.push(encodeText('-'.repeat(LINE_WIDTH) + '\n')); return }
-        if (zhOnly && !d.big) return
+      ;(zhOnly ? compactDetails(item.details) : item.details).forEach(d => {
+        if (d.rule) { chunks.push(CMD_RULE); return }
         const u = d.header
-        if (d.big) chunks.push(CMD_ZH_SIZE, ...(u ? [CMD_UNDERLINE_ON] : []), encodeText(`${d.text}\n`), ...(u ? [CMD_UNDERLINE_OFF] : []), CMD_NORMAL_SIZE)
+        if (d.big) chunks.push(CMD_ZH_SIZE, ...(u ? [CMD_UNDERLINE_ON] : []), encodeText(d.text), ...(u ? [CMD_UNDERLINE_OFF] : []), encodeText(`${d.rest || ''}\n`), CMD_NORMAL_SIZE)
         else       chunks.push(...(u ? [CMD_UNDERLINE_ON] : []), encodeText(`  ${d.text}\n`), ...(u ? [CMD_UNDERLINE_OFF] : []))
       })
     }
@@ -232,7 +256,7 @@ function buildReceiptBuffers(job) {
     }
   })
 
-  chunks.push(encodeText('--------------------------------\n'))
+  chunks.push(CMD_RULE)
 
   // Subtotal / delivery / discount lines
   const hasExtras = (discount && Number(discount) > 0) || (deliveryFee && Number(deliveryFee) > 0)
