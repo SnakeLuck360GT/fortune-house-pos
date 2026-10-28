@@ -24,10 +24,10 @@ export function formatPrice(p) {
 }
 
 // Ready time (takeaway, +20 min) / delivery window (+40–60 min) for the receipt.
-function etaText(ts, isDelivery) {
+function etaTime(ts, isDelivery) {
   const fmt = d => d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
   const at  = mins => fmt(new Date(ts.getTime() + mins * 60000))
-  return isDelivery ? `Delivery ${at(40)}-${at(60)}` : `Ready ${at(20)}`
+  return isDelivery ? `${at(40)}-${at(60)}` : at(20)
 }
 
 // Split a comma-separated note into individual lines with +/- prefix and English label.
@@ -42,8 +42,6 @@ function parseNoteLines(note) {
     .map(zh => ({ prefix: zh.startsWith('不') ? '-' : '+', zh, en: ZH_TO_EN[zh] ?? zh }))
 }
 
-// Returns a structured array of line objects for rich rendering in ReceiptPreview.
-// type: 'sep-heavy' | 'sep-light' | 'blank' | 'center' | 'zh' | 'en' | 'note' | 'subtotal' | 'total' | 'footer'
 // Banquet/offer breakdowns on paper: drop the English lines, and pull each
 // section header onto the same line as its first dish ("主菜:" + "  咕噜鸡" ->
 // "主菜: 咕噜鸡"). Divider rules are kept.
@@ -58,6 +56,8 @@ function compactDetails(details) {
   return out
 }
 
+// Returns a structured array of line objects for rich rendering in ReceiptPreview.
+// type: 'sep-heavy' | 'sep-light' | 'blank' | 'center' | 'zh' | 'en' | 'note' | 'subtotal' | 'total' | 'footer'
 export function buildReceiptLines({ items, total, tableNumber, discount, deliveryFee, orderMode, deliveryInfo, phone, customerName, timestamp }) {
   const ts = timestamp ? new Date(timestamp) : new Date()
   const dateStr = ts.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })
@@ -68,8 +68,8 @@ export function buildReceiptLines({ items, total, tableNumber, discount, deliver
 
   lines.push({ type: 'sep-heavy' })
   // Order type banner — at the very top, bilingual (no restaurant name)
-  lines.push({ type: 'order-type', text: isDelivery ? '🛵  DELIVERY  外送' : '🛍  COLLECTION  自取', isDelivery })
-  lines.push({ type: 'eta', text: `${dateStr} ${timeStr} ${etaText(ts, isDelivery)}` })
+  lines.push({ type: 'order-type', text: `${isDelivery ? '🛵 外送' : '🛍 自取'} ${etaTime(ts, isDelivery)}`, isDelivery })
+  lines.push({ type: 'center', text: `${dateStr} ${timeStr}` })
   if (tableNumber) lines.push({ type: 'center', text: `Table: ${tableNumber}` })
 
   if (isDelivery && deliveryInfo) {
@@ -100,6 +100,8 @@ export function buildReceiptLines({ items, total, tableNumber, discount, deliver
     }
     if (item.note) {
       parseNoteLines(item.note).forEach(({ prefix, zh, en }) => {
+        // Share Box drinks are English-only — show them small, like the other English lines
+        if (item.isShareBox) { lines.push({ type: 'note-en', text: `${prefix} ${en}` }); return }
         lines.push({ type: 'note-zh', text: `${prefix} ${zh}` })
         if (en !== zh && !zhOnly) lines.push({ type: 'note-en', text: `${prefix} ${en}` })
       })

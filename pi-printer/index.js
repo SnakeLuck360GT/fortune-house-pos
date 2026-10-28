@@ -132,10 +132,10 @@ function getItemName(item, lang) {
 }
 
 // Estimated ready (takeaway, +20 min) / delivery (+40–60 min) time.
-function etaText(ts, isDelivery) {
+function etaTime(ts, isDelivery) {
   const fmt = d => d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
   const at  = mins => fmt(new Date(ts.getTime() + mins * 60000))
-  return isDelivery ? `Delivery ${at(40)}-${at(60)}` : `Ready ${at(20)}`
+  return isDelivery ? `${at(40)}-${at(60)}` : at(20)
 }
 
 // ─── Note helpers ────────────────────────────────────────────────────────────
@@ -188,13 +188,15 @@ function buildReceiptBuffers(job) {
   if (USE_GB2312) chunks.push(CMD_CHINESE_ON)   // enable Chinese font mode on GB2312 printers
   chunks.push(CMD_ALIGN_CENTER)
 
-  // Order type banner — at the very top, bold + double size, bilingual
+  // Banner — at the very top, bold + double size: 自取/外送 + ready/delivery time.
+  // Drop the space if needed so the delivery window never wraps (16 cols at 2× width).
+  const banner = `${isDelivery ? '外送' : '自取'} ${etaTime(ts, isDelivery)}`
   chunks.push(CMD_BOLD_ON, CMD_DOUBLE_SIZE)
-  chunks.push(encodeText(isDelivery ? 'DELIVERY 外送\n' : 'COLLECTION 自取\n'))
+  chunks.push(encodeText((colWidth(banner) * 2 < LINE_WIDTH ? banner : banner.replace(' ', '')) + '\n'))
   chunks.push(CMD_NORMAL_SIZE, CMD_BOLD_OFF)
 
-  // Date, order time and ready/delivery time share one line to save paper
-  chunks.push(encodeText(`${dateStr} ${timeStr} `), CMD_BOLD_ON, encodeText(`${etaText(ts, isDelivery)}\n`), CMD_BOLD_OFF)
+  // Date + order time
+  chunks.push(encodeText(`${dateStr} ${timeStr}\n`))
   if (tableNumber) chunks.push(encodeText(`Table: ${tableNumber}\n`))
 
   // Delivery customer info
@@ -250,6 +252,8 @@ function buildReceiptBuffers(job) {
 
     if (item.note) {
       parseNoteLines(item.note).forEach(({ prefix, zh, en }) => {
+        // Share Box drinks are English-only — print them small, like the other English lines
+        if (item.isShareBox) { chunks.push(encodeText(`  ${prefix} ${en}\n`)); return }
         chunks.push(CMD_ZH_SIZE, encodeText(`${prefix} ${zh}\n`), CMD_NORMAL_SIZE)
         if (en !== zh && !zhOnly) chunks.push(encodeText(`  ${prefix} ${en}\n`))
       })

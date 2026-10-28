@@ -111,8 +111,8 @@ input::placeholder {
 /* ─── Home Button ───────────────────────────────────────────────────────── */
 .home-btn {
   position: fixed;
-  bottom: 14px;
-  left: 14px;
+  top: 14px;
+  right: 14px;
   z-index: 100;
   display: flex;
   align-items: center;
@@ -478,7 +478,7 @@ input::placeholder {
 
 /* ─── Order type banner ──────────────────────────────────────────────────── */
 .order-type-banner {
-  padding: 10px 16px;
+  padding: 10px 136px 10px 16px;   /* right side left clear for the fixed Home button */
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2278,6 +2278,7 @@ mark {
 /* ─── Mobile Tabs ────────────────────────────────────────────────────────── */
 .mobile-tabs {
   display: none;
+  padding-right: 130px;   /* room for the fixed Home button */
   background: var(--bg-panel);
   border-bottom: 1px solid var(--border-subtle);
 }

@@ -26,10 +26,15 @@ export default function ShareBoxModal({ onConfirm, onCancel }) {
     return selected.filter(s => s === id).length
   }
 
+  const complete = selected.length === 2
+
   function handleConfirm() {
-    const drinks = selected.map(id => {
-      const d = DRINKS.find(d => d.id === id)
-      return d ? d.nameEn : id
+    if (!complete) return   // must pick exactly 2 drinks
+    // Duplicates collapse into one entry, e.g. "2× Coca-Cola"
+    const drinks = [...new Set(selected)].map(id => {
+      const name = DRINKS.find(d => d.id === id)?.nameEn ?? id
+      const n = countOf(id)
+      return n > 1 ? `${n}× ${name}` : name
     })
     const note = drinks.join(', ')
     onConfirm(note)
@@ -67,10 +72,11 @@ export default function ShareBoxModal({ onConfirm, onCancel }) {
           <button className="modal-btn modal-btn--cancel" onClick={onCancel}>Cancel</button>
           <button
             className="modal-btn modal-btn--confirm"
-            style={{ background: 'var(--accent-green)' }}
+            style={{ background: 'var(--accent-green)', ...(complete ? {} : { opacity: 0.4, cursor: 'not-allowed' }) }}
             onClick={handleConfirm}
+            disabled={!complete}
           >
-            Add to Order
+            {complete ? 'Add to Order' : `Pick ${2 - selected.length} more`}
           </button>
         </div>
       </div>
