@@ -21,7 +21,7 @@ const FALLBACK_POLL_MS = parseInt(process.env.FALLBACK_POLL_MS || String(15 * 60
 const PRINTER_IFACE = process.env.PRINTER_INTERFACE || '/dev/usb/lp0'
 const USE_GB2312    = process.env.USE_GB2312 === 'true'  // set true for GB2312 printers
 const TAKEAWAY_COPIES = Math.max(1, parseInt(process.env.TAKEAWAY_COPIES || '3', 10))  // copies per takeaway order
-const DELIVERY_COPIES = Math.max(1, parseInt(process.env.DELIVERY_COPIES || '4', 10))  // copies per delivery order
+const DELIVERY_COPIES = Math.max(1, parseInt(process.env.DELIVERY_COPIES || '1', 10))  // copies per delivery order
 const LINE_WIDTH    = 32
 // Chinese item/detail/note size as "<width>x<height>" (1-8 each). 2x1 = wide but
 // single height, which roughly halves the paper each Chinese line uses vs 2x2.
@@ -126,6 +126,25 @@ function colWidth(s) {
   return encodeText(s).length
 }
 
+// "  2× English name" + right-aligned price. A name too long to share the line
+// with the price wraps at word boundaries onto the next line(s), so the price
+// always stays on the first line instead of being pushed down.
+function priceLines(text, price) {
+  const indent = text.match(/^ */)[0]
+  const words  = text.trim().split(/\s+/)
+  const cont   = indent + ' '.repeat(colWidth(words[0]) + 1)   // continuation lines align under the name
+  const lines  = []
+  let cur = indent + words[0]
+  words.slice(1).forEach(w => {
+    const limit = lines.length ? LINE_WIDTH : LINE_WIDTH - colWidth(price) - 1
+    if (colWidth(`${cur} ${w}`) > limit) { lines.push(cur); cur = cont + w }
+    else cur = `${cur} ${w}`
+  })
+  lines.push(cur)
+  lines[0] += ' '.repeat(Math.max(1, LINE_WIDTH - colWidth(lines[0]) - colWidth(price))) + price
+  return lines.join('\n') + '\n'
+}
+
 function getItemName(item, lang) {
   if (lang === 'zh') return item.nameZh || item.nameEn
   return item.nameEn
@@ -223,8 +242,9 @@ function buildReceiptBuffers(job) {
     const price  = formatPrice((item.price + (item.notePrice || 0)) * item.quantity)
     const zhName = item.nameZh || item.nameEn
     const qty    = item.peopleQty ?? item.quantity   // set-menus show "×people"
-    // Banquets + special offer print Chinese only, compacted (see compactDetails).
-    // To bring the English back, comment out the line below and uncomment the one after it.
+    // Banquets + special offer: English name line (with price) kept, but the breakdown
+    // is Chinese only, compacted (see compactDetails). To bring the English breakdown
+    // back, comment out the line below and uncomment the one after it.
     const zhOnly = item.isOfferItem
     // const zhOnly = false
 
@@ -233,11 +253,9 @@ function buildReceiptBuffers(job) {
     // the same line made the printer condense/"squish" the title.)
     chunks.push(CMD_ZH_SIZE, encodeText(`${qty}× ${zhName}\n`), CMD_NORMAL_SIZE)
 
-    // English name + price on a normal-size line; price always right-aligned on
-    // the SAME line as the English text, however long the name is (min 1 space).
-    const en = zhOnly ? '' : `  ${qty}× ${item.nameEn}`
-    const gap = Math.max(1, LINE_WIDTH - colWidth(en) - colWidth(price))
-    chunks.push(encodeText(en + ' '.repeat(gap) + price + '\n'))
+    // English name + price on a normal-size line; price right-aligned on the first
+    // line, long names wrap underneath (see priceLines).
+    chunks.push(encodeText(priceLines(`  ${qty}× ${item.nameEn}`, price)))
 
     // Set-meal breakdown: big Chinese block, compact English block, with
     // horizontal rules and underlined headers (no blank lines, to save paper).
@@ -375,7 +393,7 @@ async function printJob(job) {
     : buildReceiptBuffers({ ...job, lang: job.lang || 'en' })
 
   // Daily summaries print once; order receipts print per-mode copies
-  // (takeaway = 3, delivery = 4 by default).
+  // (takeaway = 3, delivery = 1 by default).
   const copies = job.type === 'float'
     ? 1
     : (job.orderMode === 'delivery' ? DELIVERY_COPIES : TAKEAWAY_COPIES)

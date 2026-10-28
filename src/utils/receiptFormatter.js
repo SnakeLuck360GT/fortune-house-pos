@@ -85,12 +85,13 @@ export function buildReceiptLines({ items, total, tableNumber, discount, deliver
     const price  = formatPrice((item.price + (item.notePrice || 0)) * item.quantity)
     const zhName = item.nameZh || item.nameEn
     const qty    = item.peopleQty ?? item.quantity   // set-menus show "×people"
-    // Banquets + special offer print Chinese only, compacted (see compactDetails).
-    // To bring the English back, comment out the line below and uncomment the one after it.
+    // Banquets + special offer: English name line (with price) kept, but the breakdown
+    // is Chinese only, compacted (see compactDetails). To bring the English breakdown
+    // back, comment out the line below and uncomment the one after it.
     const zhOnly = item.isOfferItem
     // const zhOnly = false
     lines.push({ type: 'zh', text: zhName, quantity: qty })
-    lines.push({ type: 'en', text: zhOnly ? '' : `${qty}× ${item.nameEn}`, price })
+    lines.push({ type: 'en', text: `${qty}× ${item.nameEn}`, price })
     if (Array.isArray(item.details)) {
       const isBlock = item.details.length > 2   // multi-line breakdown vs single zh/en pair
       ;(zhOnly ? compactDetails(item.details) : item.details).forEach(d => {
