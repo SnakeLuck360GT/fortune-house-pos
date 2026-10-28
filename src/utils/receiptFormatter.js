@@ -23,13 +23,13 @@ export function formatPrice(p) {
   return `£${p.toFixed(2)}`
 }
 
-// Estimated ready (takeaway, +20 min) / delivery (+40–60 min) time for the receipt.
+// Ready time (takeaway, +20 min) / delivery window (+40–60 min) for the receipt.
 function etaLines(ts, isDelivery) {
   const fmt = d => d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
   const at  = mins => fmt(new Date(ts.getTime() + mins * 60000))
   return isDelivery
-    ? [`Delivery ~${at(40)}-${at(60)}`, '约40-60分钟 / 40-60 mins']
-    : [`Ready ~${at(20)}`,              '约20分钟 / 20 mins']
+    ? [`Delivery ${at(40)}-${at(60)}`]
+    : [`Ready ${at(20)}`]
 }
 
 // Split a comma-separated note into individual lines with +/- prefix and English label.
@@ -74,24 +74,28 @@ export function buildReceiptLines({ items, total, tableNumber, discount, deliver
     const price  = formatPrice((item.price + (item.notePrice || 0)) * item.quantity)
     const zhName = item.nameZh || item.nameEn
     const qty    = item.peopleQty ?? item.quantity   // set-menus show "×people"
+    // Banquets + special offer print Chinese only. To bring the English back,
+    // comment out the line below and uncomment the one after it.
+    const zhOnly = item.isOfferItem
+    // const zhOnly = false
     lines.push({ type: 'zh', text: zhName, quantity: qty })
-    lines.push({ type: 'en', text: `${qty}× ${item.nameEn}`, price })
+    lines.push({ type: 'en', text: zhOnly ? '' : `${qty}× ${item.nameEn}`, price })
     if (Array.isArray(item.details)) {
       const isBlock = item.details.length > 2   // multi-line breakdown vs single zh/en pair
       item.details.forEach(d => {
         if (d.rule) { lines.push({ type: 'detail-rule' }); return }
+        if (zhOnly && !d.big) return
         lines.push({ type: 'detail', text: d.text, big: d.big, block: isBlock, header: d.header })
       })
     }
     if (item.note) {
       parseNoteLines(item.note).forEach(({ prefix, zh, en }) => {
         lines.push({ type: 'note-zh', text: `${prefix} ${zh}` })
-        if (en !== zh) lines.push({ type: 'note-en', text: `${prefix} ${en}` })
+        if (en !== zh && !zhOnly) lines.push({ type: 'note-en', text: `${prefix} ${en}` })
       })
     }
   })
 
-  lines.push({ type: 'blank' })
   lines.push({ type: 'sep-light' })
 
   const hasExtras = (discount && discount > 0) || (deliveryFee && deliveryFee > 0)

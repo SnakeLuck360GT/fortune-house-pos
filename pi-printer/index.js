@@ -23,6 +23,12 @@ const USE_GB2312    = process.env.USE_GB2312 === 'true'  // set true for GB2312 
 const TAKEAWAY_COPIES = Math.max(1, parseInt(process.env.TAKEAWAY_COPIES || '3', 10))  // copies per takeaway order
 const DELIVERY_COPIES = Math.max(1, parseInt(process.env.DELIVERY_COPIES || '4', 10))  // copies per delivery order
 const LINE_WIDTH    = 32
+// Chinese item/detail/note size as "<width>x<height>" (1-8 each). 2x1 = wide but
+// single height, which roughly halves the paper each Chinese line uses vs 2x2.
+const [ZH_W, ZH_H]  = (process.env.ZH_SIZE || '2x1').split('x').map(n => Math.min(8, Math.max(1, parseInt(n, 10) || 1)))
+// Dots fed per normal-height line (printer default is ~30-34). Lower = less gap
+// between lines. 0 = leave the printer's default spacing.
+const LINE_SPACING  = parseInt(process.env.LINE_SPACING || '28', 10)
 const LOGO_BUFFER   = null   // optional ESC/POS raster logo for the daily summary (none for now)
 
 // ─── Printer setup ──────────────────────────────────────────────────────────
@@ -46,10 +52,16 @@ const CMD_INIT          = Buffer.from([0x1b, 0x40])
 const CMD_ALIGN_CENTER  = Buffer.from([0x1b, 0x61, 0x01])
 const CMD_ALIGN_LEFT    = Buffer.from([0x1b, 0x61, 0x00])
 // GS ! — character size (width/height magnification 1-8). Bigger than the old
-// ESC ! cap of 2×, so Chinese can be printed genuinely large.
-const szCmd = (w, h) => Buffer.from([0x1d, 0x21, (((w - 1) & 7) << 4) | ((h - 1) & 7)])
+// ESC ! cap of 2×, so Chinese can be printed genuinely large. Also sets the line
+// spacing (ESC 3) to match the height, so tall lines never overlap the next one.
+const szCmd = (w, h) => Buffer.concat([
+  Buffer.from([0x1d, 0x21, (((w - 1) & 7) << 4) | ((h - 1) & 7)]),
+  LINE_SPACING > 0 ? Buffer.from([0x1b, 0x33, Math.min(255, LINE_SPACING * h)]) : Buffer.from([0x1b, 0x32]),
+])
 const CMD_NORMAL_SIZE   = szCmd(1, 1)
-const CMD_DOUBLE_SIZE   = szCmd(2, 2)  // the size the notes print at — the size we want for Chinese
+const CMD_DOUBLE_SIZE   = szCmd(2, 2)  // banner + total
+const CMD_ZH_SIZE       = szCmd(ZH_W, ZH_H)  // Chinese item names, set-meal lines and notes
+const CMD_WIDE_SIZE     = szCmd(2, 1)  // total — wide but single height
 const CMD_BOLD_ON       = Buffer.from([0x1b, 0x45, 0x01])
 const CMD_BOLD_OFF      = Buffer.from([0x1b, 0x45, 0x00])
 const CMD_INVERT_ON     = Buffer.from([0x1d, 0x42, 0x01])  // white on black
@@ -112,8 +124,8 @@ function etaLines(ts, isDelivery) {
   const fmt = d => d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
   const at  = mins => fmt(new Date(ts.getTime() + mins * 60000))
   return isDelivery
-    ? [`Delivery ~${at(40)}-${at(60)}`, '约40-60分钟 / 40-60 mins']
-    : [`Ready ~${at(20)}`,              '约20分钟 / 20 mins']
+    ? [`Delivery ${at(40)}-${at(60)}`]
+    : [`Ready ${at(20)}`]
 }
 
 // ─── Note helpers ────────────────────────────────────────────────────────────
@@ -148,7 +160,7 @@ function buildReceiptBuffers(job) {
   const chunks = []
 
   // Init + center
-  chunks.push(CMD_INIT)
+  chunks.push(CMD_INIT, CMD_NORMAL_SIZE)
   if (USE_GB2312) chunks.push(CMD_CHINESE_ON)   // enable Chinese font mode on GB2312 printers
   chunks.push(CMD_ALIGN_CENTER)
 
@@ -190,38 +202,38 @@ function buildReceiptBuffers(job) {
     const price  = formatPrice((item.price + (item.notePrice || 0)) * item.quantity)
     const zhName = item.nameZh || item.nameEn
     const qty    = item.peopleQty ?? item.quantity   // set-menus show "×people"
+    // Banquets + special offer print Chinese only. To bring the English back,
+    // comment out the line below and uncomment the one after it.
+    const zhOnly = item.isOfferItem
+    // const zhOnly = false
 
-    // Item title — a PURE double-size line, so it prints at exactly the same
+    // Item title — a PURE Chinese-size line, so it prints at exactly the same
     // size as the 汤:/主菜: lines and notes. (Putting the normal-size price on
     // the same line made the printer condense/"squish" the title.)
-    chunks.push(CMD_DOUBLE_SIZE, encodeText(`${qty}× ${zhName}\n`), CMD_NORMAL_SIZE)
+    chunks.push(CMD_ZH_SIZE, encodeText(`${qty}× ${zhName}\n`), CMD_NORMAL_SIZE)
 
     // English name + price on a normal-size line; price always right-aligned on
     // the SAME line as the English text, however long the name is (min 1 space).
-    const en = `  ${qty}× ${item.nameEn}`
+    const en = zhOnly ? '' : `  ${qty}× ${item.nameEn}`
     const gap = Math.max(1, LINE_WIDTH - colWidth(en) - colWidth(price))
     chunks.push(encodeText(en + ' '.repeat(gap) + price + '\n'))
 
     // Set-meal breakdown: big Chinese block, compact English block, with
-    // horizontal rules and underlined headers (identical to the preview).
+    // horizontal rules and underlined headers (no blank lines, to save paper).
     if (Array.isArray(item.details)) {
-      const isBlock = item.details.length > 2
-      let prevBig = null
-      item.details.forEach((d, di) => {
+      item.details.forEach(d => {
         if (d.rule) { chunks.push(encodeText('-'.repeat(LINE_WIDTH) + '\n')); return }
-        if (prevBig === true && !d.big && isBlock) chunks.push(lf(1))               // gap between zh/en blocks
-        if (d.header && d.big && di > 0 && prevBig === !!d.big) chunks.push(lf(1))  // gap before a big group header (English stays compact)
+        if (zhOnly && !d.big) return
         const u = d.header
-        if (d.big) chunks.push(CMD_DOUBLE_SIZE, ...(u ? [CMD_UNDERLINE_ON] : []), encodeText(`${d.text}\n`), ...(u ? [CMD_UNDERLINE_OFF] : []), CMD_NORMAL_SIZE)
+        if (d.big) chunks.push(CMD_ZH_SIZE, ...(u ? [CMD_UNDERLINE_ON] : []), encodeText(`${d.text}\n`), ...(u ? [CMD_UNDERLINE_OFF] : []), CMD_NORMAL_SIZE)
         else       chunks.push(...(u ? [CMD_UNDERLINE_ON] : []), encodeText(`  ${d.text}\n`), ...(u ? [CMD_UNDERLINE_OFF] : []))
-        prevBig = !!d.big
       })
     }
 
     if (item.note) {
       parseNoteLines(item.note).forEach(({ prefix, zh, en }) => {
-        chunks.push(CMD_DOUBLE_SIZE, encodeText(`${prefix} ${zh}\n`), CMD_NORMAL_SIZE)
-        if (en !== zh) chunks.push(encodeText(`  ${prefix} ${en}\n`))
+        chunks.push(CMD_ZH_SIZE, encodeText(`${prefix} ${zh}\n`), CMD_NORMAL_SIZE)
+        if (en !== zh && !zhOnly) chunks.push(encodeText(`  ${prefix} ${en}\n`))
       })
     }
   })
@@ -245,10 +257,10 @@ function buildReceiptBuffers(job) {
     chunks.push(CMD_BOLD_OFF)
   }
 
-  // Total — double size
-  chunks.push(CMD_BOLD_ON, CMD_DOUBLE_SIZE)
+  // Total — bold, double width only (half the paper of full double size)
+  chunks.push(CMD_BOLD_ON, CMD_WIDE_SIZE)
   const totalStr = formatPrice(total)
-  chunks.push(encodeText(pad('TOTAL:', 12) + totalStr + '\n'))
+  chunks.push(encodeText(pad('TOTAL:', LINE_WIDTH / 2 - totalStr.length) + totalStr + '\n'))
   chunks.push(CMD_NORMAL_SIZE, CMD_BOLD_OFF)
 
   chunks.push(encodeText('================================\n'))
@@ -268,7 +280,7 @@ function buildFloatBuffers(job) {
   const allOrders = [...takeaways, ...deliveries].sort((a, b) => a.timestamp - b.timestamp)
 
   const chunks = []
-  chunks.push(CMD_INIT, CMD_ALIGN_CENTER)
+  chunks.push(CMD_INIT, CMD_NORMAL_SIZE, CMD_ALIGN_CENTER)
   if (USE_GB2312) chunks.push(CMD_CHINESE_ON)   // enable Chinese font mode on GB2312 printers
 
   if (LOGO_BUFFER) chunks.push(LOGO_BUFFER)
@@ -493,6 +505,7 @@ console.log(`  API:      ${API_BASE}`)
 console.log(`  Printer:  ${PRINTER_IFACE}`)
 console.log(`  Encoding: ${USE_GB2312 ? 'GB2312' : 'UTF-8'}`)
 console.log(`  Copies:   takeaway ${TAKEAWAY_COPIES}, delivery ${DELIVERY_COPIES}`)
+console.log(`  Chinese:  ${ZH_W}x${ZH_H}, line spacing ${LINE_SPACING || 'printer default'}`)
 console.log(`  Push:     ${NTFY_URL}/${NTFY_TOPIC}`)
 console.log(`  Fallback: ${FALLBACK_POLL_MS ? `poll every ${Math.round(FALLBACK_POLL_MS / 60000)} min` : 'off'}`)
 console.log('===========================================')

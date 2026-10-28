@@ -1983,13 +1983,13 @@ mark {
   margin-top: 4px;
 }
 .rp-zh__name {
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 900;
   line-height: 1.2;
   font-family: 'Noto Sans SC', sans-serif;
 }
 .rp-zh__qty {
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 900;
   opacity: 0.9;
   margin-right: 6px;
@@ -2056,7 +2056,7 @@ mark {
   padding: 4px 0 2px;
 }
 .rp-total__amount {
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 900;
 }
 
@@ -2703,13 +2703,11 @@ mark {
   color: #555;
   line-height: 1.35;
 }
-.rp-detail-zh + .rp-detail-block { margin-top: 10px; }
+/* No gap between the zh/en blocks or before group headers — matches the tighter printed receipt */
 .rp-detail-header {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-/* Only the big (Chinese) block gets the group spacing; English stays compact */
-.rp-detail-zh.rp-detail-header { margin-top: 10px; }
 .rp-detail-rule {
   border: none;
   border-top: 1px solid #999;
