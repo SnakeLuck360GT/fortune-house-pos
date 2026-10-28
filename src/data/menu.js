@@ -134,7 +134,7 @@ export const menu = [
         { id: 'lemon',  en: 'Lemon',  zh: '柠檬', nameEn: 'Lemon Duck',  nameZh: '柠檬鸭' },
         { id: 'plum',   en: 'Plum',   zh: '梅子', nameEn: 'Plum Duck',   nameZh: '梅子鸭' },
       ] },
-      { id: 'cs17', nameEn: 'Black Bean / Szechuan Deep Fried Fish Fillet',           nameZh: '豉汁/四川炸鱼柳',         price: 10.70, choices: [
+      { id: 'cs17', nameEn: 'Black Bean / Szechuan Deep Fried Fish Fillet',           nameZh: '豉汁/四川炸鱼柳',         price: 10.70, batter: true, choices: [
         { id: 'blackbean', en: 'Black Bean', zh: '豉汁', nameEn: 'Black Bean Fish Fillet', nameZh: '豉汁鱼柳' },
         { id: 'szechuan',  en: 'Szechuan',   zh: '四川', nameEn: 'Szechuan Fish Fillet',   nameZh: '四川鱼柳' },
       ] },

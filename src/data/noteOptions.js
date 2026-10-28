@@ -23,6 +23,7 @@ export const NOTE_OPTIONS = [
   { id: 'extra-rice',      zh: '多加饭',   en: 'Extra Rice' },
   { id: 'extra-noodles',   zh: '多加面',   en: 'Extra Noodles' },
   { id: 'extra-crispy',    zh: '加脆',     en: 'Extra Crispy' },
+  { id: 'no-batter',       zh: '不上粉',   en: 'No Batter' },
   { id: 'well-done',       zh: '全熟',     en: 'Well Done' },
 ]
 
@@ -73,6 +74,9 @@ export function getItemNotes(item) {
     specificIds.push('extra-noodles')
   if (/crispy|deep.fried|salt.{0,3}pepper/.test(name))
     specificIds.push('extra-crispy')
+  // Battered dishes: "in Batter", 脆炸, and OK sauce (always battered); `batter` flags the rest
+  if (item?.batter || /batter|脆炸|\bok\b/.test(name))
+    specificIds.push('no-batter')
 
   const specific = specificIds.map(id => BY_ID[id]).filter(Boolean)
   const universal = UNIVERSAL_IDS
