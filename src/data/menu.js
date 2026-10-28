@@ -130,17 +130,17 @@ export const menu = [
       { id: 'cs14', nameEn: 'Crispy Sliced Chicken Fillet with Lemon',   nameZh: '柠檬鸡片',       price: 10.50 },
       { id: 'cs15', nameEn: 'Pak Far Duckling',                          nameZh: '百花鸭',             price: 15.00 },
       { id: 'cs16', nameEn: 'Roast Duck (Orange / Lemon / Plum)',        nameZh: '烤鸭配汁 (橙子/柠檬/梅子)',           price: 12.00, choices: [
-        { id: 'orange', en: 'Orange', zh: '橙子', nameEn: 'Roast Duck (Orange)', nameZh: '烤鸭配汁 (橙子)' },
-        { id: 'lemon',  en: 'Lemon',  zh: '柠檬', nameEn: 'Roast Duck (Lemon)',  nameZh: '烤鸭配汁 (柠檬)' },
-        { id: 'plum',   en: 'Plum',   zh: '梅子', nameEn: 'Roast Duck (Plum)',   nameZh: '烤鸭配汁 (梅子)' },
+        { id: 'orange', en: 'Orange', zh: '橙子', nameEn: 'Orange Duck', nameZh: '橙汁鸭' },
+        { id: 'lemon',  en: 'Lemon',  zh: '柠檬', nameEn: 'Lemon Duck',  nameZh: '柠檬鸭' },
+        { id: 'plum',   en: 'Plum',   zh: '梅子', nameEn: 'Plum Duck',   nameZh: '梅子鸭' },
       ] },
       { id: 'cs17', nameEn: 'Deep Fried Fish Fillet in Batter (Black Bean/Szechuan)',           nameZh: '炸鱼柳(豉汁/四川)',         price: 10.70, choices: [
-        { id: 'blackbean', en: 'Black Bean', zh: '豉汁', nameEn: 'Deep Fried Fish Fillet in Batter (Black Bean)', nameZh: '炸鱼柳(豉汁)' },
-        { id: 'szechuan',  en: 'Szechuan',   zh: '四川', nameEn: 'Deep Fried Fish Fillet in Batter (Szechuan)',   nameZh: '炸鱼柳(四川)' },
+        { id: 'blackbean', en: 'Black Bean', zh: '豉汁', nameEn: 'Black Bean Fish Fillet', nameZh: '豉汁鱼柳' },
+        { id: 'szechuan',  en: 'Szechuan',   zh: '四川', nameEn: 'Szechuan Fish Fillet',   nameZh: '四川鱼柳' },
       ] },
-      { id: 'cs18', nameEn: 'Poached Scallops (Ginger & Spring Onion or XO)', nameZh: '姜葱/XO汁扇贝', price: 13.00, choices: [
-        { id: 'ginger', en: 'Ginger & Spring Onion', zh: '姜葱', nameEn: 'Poached Scallops (Ginger & Spring Onion)', nameZh: '姜葱扇贝' },
-        { id: 'xo',     en: 'XO',                    zh: 'XO汁', nameEn: 'Poached Scallops (XO)',                    nameZh: 'XO汁扇贝' },
+      { id: 'cs18', nameEn: 'Poached Scallops (Ginger & Spring Onion or XO)', nameZh: '姜葱/XO汁带子', price: 13.00, choices: [
+        { id: 'ginger', en: 'Ginger & Spring Onion', zh: '姜葱', nameEn: 'Poached Scallops (Ginger & Spring Onion)', nameZh: '姜葱带子' },
+        { id: 'xo',     en: 'XO',                    zh: 'XO汁', nameEn: 'Poached Scallops (XO)',                    nameZh: 'XO汁带子' },
       ] },
       { id: 'cs19', nameEn: 'Marple Tofoo with Mince Pork',              nameZh: '猪肉麻婆豆腐',           price: 10.80 },
     ],
