@@ -264,7 +264,7 @@ export default function MenuConfig({ onNavigate }) {
                   <h2>Export / import</h2>
                   <p className="cfg-muted" style={{ marginBottom: 12 }}>
                     Everything here is saved on this device only. Export a file to keep a backup or copy it to another tablet.
-                    The file includes renamed dishes, notes and app settings (not this password).
+                    The file includes renamed dishes, notes, app settings and saved delivery customers (not this password).
                   </p>
                   <div className="cfg-row-btns">
                     <button className="settings-btn settings-btn--gold" onClick={exportFile}>⬇ Export settings</button>

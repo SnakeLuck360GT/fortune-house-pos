@@ -5,6 +5,7 @@
 // Kept in localStorage (survives closing the browser) and exportable as a file.
 // It lives on this device only — export/import to copy it to another tablet.
 import { useSyncExternalStore } from 'react'
+import { getCustomers, setCustomers } from './customers.js'
 
 const CONFIG_KEY   = 'pos_menu_config'
 const SETTINGS_KEY = 'pos_settings'   // App.jsx settings, included in exports
@@ -97,6 +98,7 @@ export function exportAll() {
     exportedAt: new Date().toISOString(),
     menuConfig: config,
     settings,
+    customers: getCustomers(),
   }
 }
 
@@ -107,4 +109,5 @@ export function importAll(data) {
   if (data.settings && typeof data.settings === 'object') {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(data.settings))
   }
+  if (Array.isArray(data.customers)) setCustomers(data.customers)
 }

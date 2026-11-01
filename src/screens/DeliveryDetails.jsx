@@ -3,6 +3,7 @@ import HomeButton from '../components/HomeButton.jsx'
 import { fetchPostcodeInfo, fetchDriveMinutes, looksLikePostcode, formatPostcode } from '../utils/geocoder.js'
 import { getDeliveryZone } from '../utils/deliveryZones.js'
 import { isValidUkPhone } from '../utils/phone.js'
+import { findAddresses } from '../utils/customers.js'
 
 export default function DeliveryDetails({ onNavigate, onConfirm, t }) {
   const [name,         setName]         = useState('')
@@ -18,6 +19,11 @@ export default function DeliveryDetails({ onNavigate, onConfirm, t }) {
 
   const debounce  = useRef(null)
   const currentPc = useRef('')
+  const pendingHouse = useRef(null)   // house number to fill once a suggested postcode has loaded
+
+  // Returning customer: same phone + first name → offer their past address(es)
+  const suggestions = findAddresses(name, phone)
+  const [dismissed, setDismissed] = useState(false)
 
   useEffect(() => {
     clearTimeout(debounce.current)
@@ -40,6 +46,7 @@ export default function DeliveryDetails({ onNavigate, onConfirm, t }) {
       const info = await fetchPostcodeInfo(pc)
       if (currentPc.current !== pc) return
       setPostcodeInfo(info)
+      if (pendingHouse.current != null) { setHouseNumber(pendingHouse.current); pendingHouse.current = null }
       setZone(getDeliveryZone(pc))
       fetchDriveMinutes(info.lat, info.lon).then(m => {
         if (currentPc.current === pc) setDriveMin(m)
@@ -69,6 +76,18 @@ export default function DeliveryDetails({ onNavigate, onConfirm, t }) {
   const phoneOk = !phone.trim() || isValidUkPhone(phone)   // optional, but valid if entered
   const canStart = !!postcode.trim() && outAreaConfirmed && phoneOk   // name is optional
 
+  function applySuggestion(s) {
+    pendingHouse.current = s.houseNumber
+    if (formatPostcode(postcode) === s.postcode && postcodeInfo) {
+      setHouseNumber(s.houseNumber)   // same postcode already loaded — just fill the house
+      pendingHouse.current = null
+    } else {
+      setPostcode(s.postcode)
+      setPostcodeInfo(null)
+    }
+    setDismissed(true)
+  }
+
   function handleConfirm() {
     if (!canStart) return
     onConfirm({
@@ -76,6 +95,7 @@ export default function DeliveryDetails({ onNavigate, onConfirm, t }) {
       phone:        phone.trim(),
       address:      fullAddress,
       postcode:     pc,
+      houseNumber:  houseNumber.trim(),
       deliveryFee:  zone?.fee ?? 4.00,
       driveMinutes: driveMin,
     })
@@ -99,7 +119,7 @@ export default function DeliveryDetails({ onNavigate, onConfirm, t }) {
           <input
             type="text"
             value={name}
-            onChange={e => setName(e.target.value)}
+            onChange={e => { setName(e.target.value); setDismissed(false) }}
             placeholder="e.g. John Smith"
             autoFocus
           />
@@ -111,7 +131,7 @@ export default function DeliveryDetails({ onNavigate, onConfirm, t }) {
             type="tel"
             inputMode="tel"
             value={phone}
-            onChange={e => setPhone(e.target.value)}
+            onChange={e => { setPhone(e.target.value); setDismissed(false) }}
             placeholder="e.g. 07700 900123"
           />
           {phone.trim() && (
@@ -120,6 +140,23 @@ export default function DeliveryDetails({ onNavigate, onConfirm, t }) {
               : <div style={{ fontSize: 13, color: 'var(--danger)', marginTop: 4 }}>✗ Check the number — doesn't look like a UK phone</div>
           )}
         </div>
+
+        {suggestions.length > 0 && !dismissed && (
+          <div className="addr-suggest">
+            <div className="addr-suggest__title">
+              <span>📍 Is it this address?</span>
+              <button className="addr-suggest__close" onClick={() => setDismissed(true)} aria-label="No, enter a new address">×</button>
+            </div>
+            {suggestions.map(s => (
+              <button key={`${s.postcode}|${s.houseNumber}`} className="addr-suggest__opt" onClick={() => applySuggestion(s)}>
+                <span className="addr-suggest__addr">{s.address}</span>
+                <span className="addr-suggest__meta">
+                  {s.name} · {s.orders} order{s.orders > 1 ? 's' : ''} · last {new Date(s.lastOrder).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="delivery-field">
           <label>Postcode</label>

@@ -14,6 +14,7 @@ import ChoiceModal from '../components/ChoiceModal.jsx'
 import { wakePrinter } from '../utils/wakePrinter.js'
 import { useMenu }  from '../hooks/useMenu.js'
 import { useOrder } from '../hooks/useOrder.js'
+import { rememberCustomer } from '../utils/customers.js'
 
 function Toast({ message, type }) {
   return <div className={`toast toast--${type}`}>{message}</div>
@@ -185,6 +186,7 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       wakePrinter(job.orderId)
+      if (orderMode === 'delivery' && deliveryInfo) rememberCustomer(deliveryInfo)
       showToast(t.jobSent, 'success')
       order.clearOrder()
       resetInstances()
