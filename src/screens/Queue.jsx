@@ -147,6 +147,10 @@ function JobCard({ job, onSelect, onRetry, t }) {
         <div className="queue-card__error">Error: {job.error}</div>
       )}
 
+      {job.warning && job.status === 'pending' && (
+        <div className="queue-card__warning">🧻 {job.warning}</div>
+      )}
+
       {job.status === 'failed' && (
         <button className="queue-card__retry" onClick={e => { e.stopPropagation(); onRetry(job.jobId) }}>
           🔄 {t.retry}

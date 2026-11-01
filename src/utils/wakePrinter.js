@@ -3,8 +3,8 @@
 // Sent from the browser (not the Netlify function) so ntfy's free per-IP
 // limits apply to the restaurant's own connection, not shared Netlify IPs.
 // The topic must match NTFY_TOPIC on the Pi (pi-printer/index.js).
-const NTFY_URL   = import.meta.env.VITE_NTFY_URL   || 'https://ntfy.sh'
-const NTFY_TOPIC = import.meta.env.VITE_NTFY_TOPIC || 'fortunehouse-print-VuobJYS9XKBh'
+export const NTFY_URL   = import.meta.env.VITE_NTFY_URL   || 'https://ntfy.sh'
+export const NTFY_TOPIC = import.meta.env.VITE_NTFY_TOPIC || 'fortunehouse-print-VuobJYS9XKBh'
 
 export function wakePrinter(jobId = '') {
   // Fire-and-forget: the job is already queued, and the Pi's fallback poll

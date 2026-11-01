@@ -1300,6 +1300,33 @@ mark {
   border: 1px solid rgba(239,68,68,0.3);
 }
 
+/* ─── Out-of-paper banner ────────────────────────────────────────────────── */
+.paper-banner {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: calc(100% - 32px);
+  padding: 14px 16px 14px 20px;
+  border-radius: var(--radius);
+  background: var(--accent-gold);
+  color: #000;
+  font-size: 16px;
+  font-weight: 700;
+  box-shadow: var(--shadow-lg);
+}
+.paper-banner__icon { font-size: 22px; }
+.paper-banner__close {
+  font-size: 22px;
+  line-height: 1;
+  padding: 0 4px;
+  color: rgba(0,0,0,0.6);
+}
+
 /* ─── Menu Config Screen ─────────────────────────────────────────────────── */
 .cfg-screen { max-width: 760px; }
 .cfg-muted { font-size: 13px; color: var(--text-secondary); }
@@ -1716,6 +1743,16 @@ mark {
   font-weight: 700;
   color: var(--accent-gold);
   margin-top: 6px;
+}
+
+.queue-card__warning {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: rgba(245,158,11,0.15);
+  color: var(--accent-gold);
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .queue-card__error {

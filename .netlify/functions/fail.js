@@ -29,7 +29,9 @@ export const handler = async (event) => {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'Invalid JSON' }) }
   }
 
-  const { jobId, error } = body
+  // `warning` (string, or null to clear) flags a job the Pi is still holding,
+  // e.g. out of paper — it stays pending and prints once the Pi carries on.
+  const { jobId, error, warning } = body
 
   if (!jobId) {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'jobId required' }) }
@@ -44,9 +46,13 @@ export const handler = async (event) => {
     }
 
     const job = JSON.parse(raw)
-    job.status   = 'failed'
-    job.error    = error || 'Unknown printer error'
-    job.failedAt = Date.now()
+    if (warning !== undefined) {
+      job.warning = warning || null
+    } else {
+      job.status   = 'failed'
+      job.error    = error || 'Unknown printer error'
+      job.failedAt = Date.now()
+    }
 
     await store.set(`job:${jobId}`, JSON.stringify(job))
 

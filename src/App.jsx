@@ -7,6 +7,7 @@ import TakeawayDetails from './screens/TakeawayDetails.jsx'
 import Settings       from './screens/Settings.jsx'
 import Queue          from './screens/Queue.jsx'
 import MenuConfig     from './screens/MenuConfig.jsx'
+import PaperBanner    from './components/PaperBanner.jsx'
 
 const SETTINGS_KEY = 'pos_settings'
 
@@ -56,6 +57,7 @@ export default function App() {
 
   return (
     <div className="app">
+      <PaperBanner />
       {screen === 'menu' && (
         <MainMenu onNavigate={navigate} t={t} settings={settings} />
       )}

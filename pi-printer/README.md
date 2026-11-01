@@ -91,6 +91,8 @@ USE_GB2312=false
 
 **`NTFY_TOPIC`** (optional) — the ntfy.sh topic the web app publishes wake-ups to. Defaults to the same topic as the web app (`src/utils/wakePrinter.js`); if you change it, set `VITE_NTFY_TOPIC` in Netlify to match. `FALLBACK_POLL_MS` (default 15 min, `0` = off) is a rare safety-net check in case a wake-up is missed. `POLL_MS` is no longer used.
 
+**`PAPER_CHECK`** (optional, default on) — before each copy the Pi reads the printer's paper-out signal (through the USB-parallel adapter, via `python3`). If the roll is out or the lid is open it holds the job, shows "Out of paper" on the job in the Queue and as a banner in the app (via the `<NTFY_TOPIC>-status` ntfy topic), and prints as soon as a new roll is in. Set `PAPER_CHECK=false` if it ever holds jobs when there is paper.
+
 **`PRINTER_INTERFACE`** — the USB device file for the printer. To find it:
 ```bash
 ls /dev/usb/

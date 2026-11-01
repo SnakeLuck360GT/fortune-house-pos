@@ -60,6 +60,7 @@ export const handler = async (event) => {
     const job = JSON.parse(raw)
     job.status = resetToPending ? 'pending' : 'printed'
     job.error  = null
+    job.warning = null
     job.printedAt = resetToPending ? null : Date.now()
 
     await store.set(`job:${jobId}`, JSON.stringify(job))

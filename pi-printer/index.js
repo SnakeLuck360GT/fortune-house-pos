@@ -33,6 +33,9 @@ const [ZH_W, ZH_H]  = (process.env.ZH_SIZE || '2x2').split('x').map(n => Math.mi
 // Dots fed per normal-height line (printer default is ~30-34). 24 = the font's
 // own height, i.e. no gap between lines. 0 = leave the printer's default spacing.
 const LINE_SPACING  = parseInt(process.env.LINE_SPACING || '24', 10)
+// Check the printer's paper-out signal before each copy and hold the job until
+// a new roll is loaded. Set PAPER_CHECK=false if the printer reports wrongly.
+const PAPER_CHECK   = process.env.PAPER_CHECK !== 'false'
 const LOGO_BUFFER   = null   // optional ESC/POS raster logo for the daily summary (none for now)
 
 // ─── Printer setup ──────────────────────────────────────────────────────────
@@ -436,6 +439,56 @@ function buildFloatBuffers(job) {
 }
 
 // ─── Print job ───────────────────────────────────────────────────────────────
+// ─── Paper sensor ────────────────────────────────────────────────────────────
+// The printer hangs off a USB-parallel adapter, which can't carry ESC/POS
+// replies but does pass the parallel status lines. LPGETSTATUS (0x060b) reads
+// them: 0x20 = paper out, 0x08 = no error. Paper in reads 0x18, out/lid open 0x30.
+// Node has no ioctl, so a one-line python3 does the read.
+const { execFile } = require('child_process')
+const LPGETSTATUS_PY =
+  'import fcntl,array,os,sys\n' +
+  'fd=os.open(sys.argv[1],os.O_RDWR)\n' +
+  'b=array.array("i",[0]);fcntl.ioctl(fd,0x060b,b);print(b[0])'
+
+let paperCheckBroken = false
+function paperStatus() {
+  if (!PAPER_CHECK || paperCheckBroken) return Promise.resolve('ok')
+  return new Promise(resolve => {
+    execFile('python3', ['-c', LPGETSTATUS_PY, PRINTER_IFACE], { timeout: 3000 }, (err, out) => {
+      if (err) {
+        // Can't read it (no python3, permissions…): print as before rather than block
+        console.warn('[PAPER] Status check unavailable, printing without it:', err.message.split('\n')[0])
+        paperCheckBroken = true
+        return resolve('ok')
+      }
+      const s = parseInt(out, 10)
+      resolve((s & 0x20) || !(s & 0x08) ? 'out' : 'ok')
+    })
+  })
+}
+
+// Tell the app (banner) via ntfy, on a separate topic so it never wakes our own listener
+async function notifyApp(state, message = '') {
+  await fetch(`${NTFY_URL}/${NTFY_TOPIC}-status`, {
+    method: 'POST',
+    body: JSON.stringify({ paper: state, message }),
+    timeout: 8000,
+  }).catch(err => console.warn('[PAPER] Could not notify app:', err.message))
+}
+
+// Wait (locally — no Netlify calls) until the printer has paper. Flags the job
+// in the Queue and shows a banner in the app while waiting, clears both after.
+async function waitForPaper(job, message) {
+  if (await paperStatus() === 'ok') return
+  console.log(`[PAPER] ${job.jobId}: ${message}`)
+  await Promise.all([setWarning(job.jobId, message), notifyApp('out', message)])
+  while (await paperStatus() !== 'ok') await new Promise(r => setTimeout(r, 3000))
+  console.log('[PAPER] Paper loaded — carrying on')
+  // Give the user a moment to close the lid properly before printing
+  await new Promise(r => setTimeout(r, 1500))
+  await Promise.all([setWarning(job.jobId, null), notifyApp('ok')])
+}
+
 async function printJob(job) {
   console.log(`[PRINT] Printing job ${job.jobId} (type: ${job.type || 'order'})…`)
 
@@ -456,9 +509,15 @@ async function printJob(job) {
     ? 1
     : (job.orderMode === 'delivery' ? DELIVERY_COPIES : TAKEAWAY_COPIES)
 
-  // Use raw buffer mode — write directly to the printer interface
+  // Use raw buffer mode — write directly to the printer interface. Paper is
+  // checked before every copy, so a roll that runs out after copy 2 holds copy 3
+  // until a new one goes in. (A copy cut short finishes by itself: the printer
+  // keeps the rest in its memory and prints it once the lid is closed.)
   const fs = require('fs')
   for (let i = 0; i < copies; i++) {
+    await waitForPaper(job, copies > 1
+      ? `Out of paper — copy ${i + 1} of ${copies} waiting. Load a new roll and it will print.`
+      : 'Out of paper — load a new roll and it will print.')
     const fd = fs.openSync(PRINTER_IFACE, 'w')
     fs.writeSync(fd, buffer)
     fs.closeSync(fd)
@@ -487,6 +546,16 @@ async function markComplete(jobId) {
     body: JSON.stringify({ jobId }),
     timeout: 8000,
   })
+}
+
+// A note on a job that is still pending (e.g. out of paper); null clears it
+async function setWarning(jobId, warning) {
+  await fetch(`${API_BASE}/api/fail`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ jobId, warning }),
+    timeout: 8000,
+  }).catch(err => console.warn('[PAPER] Could not flag job:', err.message))
 }
 
 async function markFailed(jobId, error) {
@@ -601,6 +670,7 @@ console.log(`  Printer:  ${PRINTER_IFACE}`)
 console.log(`  Encoding: ${USE_GB2312 ? 'GB2312' : 'UTF-8'}`)
 console.log(`  Copies:   takeaway ${TAKEAWAY_COPIES}, delivery ${DELIVERY_COPIES}`)
 console.log(`  Chinese:  ${ZH_W}x${ZH_H}, line spacing ${LINE_SPACING || 'printer default'}`)
+console.log(`  Paper:    ${PAPER_CHECK ? 'check before each copy' : 'not checked'}`)
 console.log(`  Push:     ${NTFY_URL}/${NTFY_TOPIC}`)
 console.log(`  Fallback: ${FALLBACK_POLL_MS ? `poll every ${Math.round(FALLBACK_POLL_MS / 60000)} min` : 'off'}`)
 console.log('===========================================')
