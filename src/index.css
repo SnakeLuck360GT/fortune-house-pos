@@ -2869,6 +2869,17 @@ mark {
 .so-soup-row .so-stepper__btn { width: 40px; height: 40px; font-size: 20px; }
 .so-soup-row .so-stepper__value { font-size: 22px; min-width: 28px; }
 
+/* "English bigger": English name large and on top in the option pop-ups
+   (banquet mains, house-dish sauces, offer choices, duck, pick-one dishes) */
+.app--en-big .so-opt__en { order: -1; font-size: 15px; font-weight: 700; color: var(--text-primary); }
+.app--en-big .so-opt__zh { font-size: 12px; font-weight: 500; color: var(--text-secondary); }
+.app--en-big .so-starter { display: flex; flex-direction: column; }
+.app--en-big .so-starter__zh { order: 2; font-size: 13px; font-weight: 500; color: var(--text-secondary); }
+.app--en-big .so-starter__en { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+.app--en-big .so-soup-row > div:first-child { display: flex; flex-direction: column; }
+.app--en-big .so-soup-row__en { order: -1; font-size: 16px; font-weight: 700; color: var(--text-primary); }
+.app--en-big .so-soup-row__zh { font-size: 12px; font-weight: 500; color: var(--text-secondary); }
+
 /* Review */
 .so-review { display: flex; flex-direction: column; gap: 6px; }
 .so-review__row {

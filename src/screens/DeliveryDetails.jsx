@@ -37,7 +37,9 @@ export default function DeliveryDetails({ onNavigate, onConfirm, t }) {
     const pc = formatPostcode(raw)
     currentPc.current = pc
     setPostcodeInfo(null)
-    setHouseNumber('')
+    // A saved address fills its house number straight away; a typed postcode starts blank
+    setHouseNumber(pendingHouse.current ?? '')
+    pendingHouse.current = null
     setZone(null)
     setDriveMin(null)
     setConfirmText('')
@@ -46,6 +48,7 @@ export default function DeliveryDetails({ onNavigate, onConfirm, t }) {
       const info = await fetchPostcodeInfo(pc)
       if (currentPc.current !== pc) return
       setPostcodeInfo(info)
+      // Saved address tapped while this same postcode was already loading
       if (pendingHouse.current != null) { setHouseNumber(pendingHouse.current); pendingHouse.current = null }
       setZone(getDeliveryZone(pc))
       fetchDriveMinutes(info.lat, info.lon).then(m => {
@@ -74,7 +77,9 @@ export default function DeliveryDetails({ onNavigate, onConfirm, t }) {
   const needsConfirm = !!zone?.outOfArea
   const outAreaConfirmed = !needsConfirm || confirmText.trim().toLowerCase() === 'confirm'
   const phoneOk = !phone.trim() || isValidUkPhone(phone)   // optional, but valid if entered
-  const canStart = !!postcode.trim() && outAreaConfirmed && phoneOk   // name is optional
+  // Still fetching the street / fee for a postcode — wait, or the order goes out with no street
+  const lookingUp = looksLikePostcode(postcode) && !postcodeInfo && !pcError
+  const canStart = !!postcode.trim() && !lookingUp && outAreaConfirmed && phoneOk   // name is optional
 
   function applySuggestion(s) {
     pendingHouse.current = s.houseNumber
@@ -240,7 +245,7 @@ export default function DeliveryDetails({ onNavigate, onConfirm, t }) {
           onClick={handleConfirm}
           disabled={!canStart}
         >
-          Start Order →
+          {lookingUp ? 'Finding address…' : 'Start Order →'}
         </button>
       </div>
     </div>

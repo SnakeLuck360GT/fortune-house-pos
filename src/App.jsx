@@ -31,6 +31,9 @@ export default function App() {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(merged))
   }
 
+  const displayLang = settings.displayLang || 'both'
+  const enBig = displayLang === 'en' || (displayLang === 'both' && settings.bigLang === 'en')
+
   // navigate(screen, mode?) — mode is 'takeaway'|'delivery'
   const navigate = useCallback((to, mode) => {
     if (mode) setOrderMode(mode)
@@ -62,7 +65,9 @@ export default function App() {
   }
 
   return (
-    <div className="app">
+    // "English bigger" (Settings → Menu Item Display) also flips the dish/sauce
+    // option buttons in the pop-ups, via CSS on this class
+    <div className={`app${enBig ? ' app--en-big' : ''}`}>
       <PaperBanner />
       {flash && <div className="toast toast--success">{flash}</div>}
       {screen === 'menu' && (
