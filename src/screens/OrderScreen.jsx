@@ -40,6 +40,7 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
   const [platterStates, setPlatterStates] = useState({})
 
   const displayLang = settings?.displayLang || 'both'
+  const bigLang     = settings?.bigLang     || 'zh'
   const tableNumber = settings?.tableNumber || ''
 
   // Pre-fill delivery fee from deliveryInfo when delivery mode
@@ -305,6 +306,7 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
               qtyInOrder={badgeFor(item)}
               onAdd={handleAddItem}
               displayLang={displayLang}
+              bigLang={bigLang}
             />
           ))}
         </div>

@@ -15,6 +15,7 @@ export default function Settings({ onNavigate, settings, onSaveSettings, lang, s
   const [printerUrl,  setPrinterUrl]  = useState(settings.printerUrl  || '')
   const [tableNumber, setTableNumber] = useState(settings.tableNumber || '')
   const [displayLang, setDisplayLang] = useState(settings.displayLang || 'both')
+  const [bigLang,     setBigLang]     = useState(settings.bigLang     || 'zh')
   const [showPreview, setShowPreview] = useState(false)
   const [sending,     setSending]     = useState(false)
   const [unlocked,    setUnlocked]    = useState(false)
@@ -113,6 +114,28 @@ export default function Settings({ onNavigate, settings, onSaveSettings, lang, s
                 </button>
               ))}
             </div>
+            {displayLang === 'both' && (
+              <>
+                <label style={{ margin: '14px 0 10px', display: 'block', color: 'var(--text-muted)', fontSize: 13 }}>
+                  Bigger name / 大字:
+                </label>
+                <div className="lang-toggle" style={{ gap: 6 }}>
+                  {[
+                    { val: 'zh', label: '中文 bigger' },
+                    { val: 'en', label: 'English bigger' },
+                  ].map(o => (
+                    <button
+                      key={o.val}
+                      className={`lang-btn ${bigLang === o.val ? 'lang-btn--active' : 'lang-btn--inactive'}`}
+                      onClick={() => { setBigLang(o.val); onSaveSettings({ bigLang: o.val }) }}
+                      style={{ flex: '1 1 0' }}
+                    >
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </div>
 
