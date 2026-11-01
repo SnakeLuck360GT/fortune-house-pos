@@ -23,6 +23,7 @@ export default function App() {
   const [takeawayInfo, setTakeawayInfo] = useState(null)     // from TakeawayDetails
   const { lang, setLang, t } = useLanguage()
   const [settings, setSettings] = useState(loadSettings)
+  const [flash,    setFlash]    = useState(null)   // toast carried to the home screen
 
   function saveSettings(updated) {
     const merged = { ...settings, ...updated }
@@ -48,7 +49,12 @@ export default function App() {
     setScreen('order')
   }
 
-  function goMenu() {
+  // goMenu('✓ Print job sent') also shows that message on the home screen
+  function goMenu(message) {
+    if (typeof message === 'string') {
+      setFlash(message)
+      setTimeout(() => setFlash(null), 3000)
+    }
     setScreen('menu')
     setOrderMode(null)
     setDeliveryInfo(null)
@@ -58,6 +64,7 @@ export default function App() {
   return (
     <div className="app">
       <PaperBanner />
+      {flash && <div className="toast toast--success">{flash}</div>}
       {screen === 'menu' && (
         <MainMenu onNavigate={navigate} t={t} settings={settings} />
       )}

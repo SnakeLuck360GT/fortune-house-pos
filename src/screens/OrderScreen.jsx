@@ -187,9 +187,9 @@ export default function OrderScreen({ onNavigate, onGoMenu, t, lang, settings, o
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       wakePrinter(job.orderId)
       if (orderMode === 'delivery' && deliveryInfo) rememberCustomer(deliveryInfo)
-      showToast(t.jobSent, 'success')
       order.clearOrder()
       resetInstances()
+      onGoMenu(t.jobSent)   // back to home, ready for the next order
     } catch (err) {
       console.error('Print failed:', err)
       showToast(t.jobFailed, 'error')
