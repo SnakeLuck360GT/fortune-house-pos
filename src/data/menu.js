@@ -237,6 +237,7 @@ export const menu = [
       { id: 'sd13', nameEn: 'Satay Sauce',                               nameZh: '沙爹汁',             price: 3.00 },
       { id: 'sd14', nameEn: 'Cantonese Sauce',                           nameZh: '中式汁',             price: 3.00 },
       { id: 'sd15', nameEn: 'Peking Sauce',                              nameZh: '北京汁',             price: 3.00 },
+      { id: 'sd17', nameEn: 'OK Sauce',                                  nameZh: 'OK汁',               price: 3.00 },
     ],
   },
   {

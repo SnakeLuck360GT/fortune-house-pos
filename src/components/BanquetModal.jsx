@@ -1,12 +1,64 @@
 import { useState, useEffect, useMemo } from 'react'
 import { formatPrice } from '../utils/receiptFormatter.js'
 import NoteModal from './NoteModal.jsx'
+import { HOUSE_DISH_SAUCES, sauceById } from '../data/houseDishes.js'
 import {
   MIN_PEOPLE, BANQUETS, RICE_INCLUDED, DUPLICATE_MAIN_FEE, FREE_DUPLICATE_PEOPLE, banquetById,
-  isBanquetPersonComplete, banquetSurcharge, buildBanquetItem,
+  isBanquetPersonComplete, banquetSurcharge, banquetSauceExtras, banquetTotal, banquetMainName, buildBanquetItem,
 } from '../data/houseBanquets.js'
 
-const newPerson = () => ({ soupId: null, mainId: null, note: '' })
+const newPerson = () => ({ soupId: null, mainId: null, sauceId: null, note: '' })
+
+// Swap a banquet main's sauce for any house-dish sauce (or back to the original).
+function SaucePickerModal({ main, sauceId, onConfirm, onCancel }) {
+  const original = banquetMainName(main, null)
+  return (
+    <div className="overlay" onClick={onCancel}>
+      <div className="modal special-offer-modal" onClick={e => e.stopPropagation()}>
+        <div className="so-header">
+          <div>
+            <h2 style={{ margin: 0 }}>{original.zh} <span className="so-header__en">{original.en}</span></h2>
+            <p className="so-header__step">Change sauce 换汁</p>
+          </div>
+        </div>
+        <div className="so-body">
+          <div className="so-grid so-grid--sauces">
+            <button
+              type="button"
+              className={`so-opt${!sauceId ? ' so-opt--selected' : ''}`}
+              onClick={() => onConfirm(null)}
+            >
+              <span className="so-opt__zh">原汁</span>
+              <span className="so-opt__en">Original · {original.en}</span>
+            </button>
+            {HOUSE_DISH_SAUCES.map(s => {
+              const name = banquetMainName(main, s.id)
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  className={`so-opt${sauceId === s.id ? ' so-opt--selected' : ''}`}
+                  onClick={() => onConfirm(s.id)}
+                >
+                  <span className="so-opt__zh">{name.zh}</span>
+                  <span className="so-opt__en">
+                    {name.en}
+                    {s.spicy && <span className="so-opt__tag"> 🌶</span>}
+                    {s.nut && <span className="so-opt__tag"> 🥜</span>}
+                  </span>
+                  {s.extra ? <span className="so-opt__badge">+{formatPrice(s.extra)}</span> : null}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+        <div className="so-footer">
+          <button className="modal-btn modal-btn--cancel" onClick={onCancel}>Cancel</button>
+        </div>
+      </div>
+    </div>
+  )
+}
 const CONFIRM_PRESSES = 3   // deliberate taps needed to add a paid duplicate main
 
 function OptionCard({ selected, disabled, confirming, onClick, zh, en, tag, badge, note }) {
@@ -41,19 +93,23 @@ function PersonCard({ index, person, banquet, othersMainIds = [], lowerMainIds =
   const done = isBanquetPersonComplete(person)
   const [pending, setPending] = useState({ mainId: null, presses: 0 })
   const [noteOpen, setNoteOpen] = useState(false)
+  const [sauceOpen, setSauceOpen] = useState(false)
+  const selectedMain = banquet.mains.find(m => m.id === person.mainId)
+  const sauce = sauceById(person.sauceId)
+  const mainName = banquetMainName(selectedMain, person.sauceId)
 
   function pickMain(m) {
     if (person.mainId === m.id) return                       // already chosen — no-op
     const paidDup = chargeDuplicates && othersMainIds.includes(m.id) && !m.chicken
     if (!paidDup) {                                          // free: another's chicken, or nobody has it
-      onChange({ ...person, mainId: m.id })
+      onChange({ ...person, mainId: m.id, sauceId: null })
       setPending({ mainId: null, presses: 0 })
       return
     }
     // paid duplicate — require several deliberate taps
     const presses = (pending.mainId === m.id ? pending.presses : 0) + 1
     if (presses >= CONFIRM_PRESSES) {
-      onChange({ ...person, mainId: m.id })
+      onChange({ ...person, mainId: m.id, sauceId: null })
       setPending({ mainId: null, presses: 0 })
     } else {
       setPending({ mainId: m.id, presses })
@@ -108,6 +164,21 @@ function PersonCard({ index, person, banquet, othersMainIds = [], lowerMainIds =
         })}
       </div>
 
+      {selectedMain && (
+        <>
+          <div className="so-person__label">Sauce 换汁</div>
+          <button
+            type="button"
+            className={`so-note-btn${sauce ? ' so-note-btn--set' : ''}`}
+            onClick={() => setSauceOpen(true)}
+          >
+            {sauce
+              ? <>{mainName.zh} · {mainName.en}{sauce.extra ? ` (+${formatPrice(sauce.extra)})` : ''}</>
+              : '⇄ Change sauce 换汁'}
+          </button>
+        </>
+      )}
+
       <div className="so-person__label">Note 备注</div>
       <button
         type="button"
@@ -116,6 +187,15 @@ function PersonCard({ index, person, banquet, othersMainIds = [], lowerMainIds =
       >
         {person.note ? person.note : '＋ Add note 添加备注'}
       </button>
+
+      {sauceOpen && selectedMain && (
+        <SaucePickerModal
+          main={selectedMain}
+          sauceId={person.sauceId}
+          onConfirm={(sauceId) => { onChange({ ...person, sauceId }); setSauceOpen(false) }}
+          onCancel={() => setSauceOpen(false)}
+        />
+      )}
 
       {noteOpen && (
         <NoteModal
@@ -153,7 +233,8 @@ export default function BanquetModal({ fixedBanquetId, initial, onConfirm, onCan
   }, [people])
 
   const surcharge = useMemo(() => banquetSurcharge(banquet, persons), [banquet, persons])
-  const total = banquet ? people * banquet.pricePerPerson + surcharge : 0
+  const sauceExtras = useMemo(() => banquetSauceExtras(persons), [persons])
+  const total = banquetTotal(banquet, people, persons)
   const allDone = persons.every(isBanquetPersonComplete)
 
   const canAdvance =
@@ -254,12 +335,15 @@ export default function BanquetModal({ fixedBanquetId, initial, onConfirm, onCan
               <div className="so-review__sub">Incl: {banquet.included.map(i => i.en).join(', ')}</div>
               {persons.map((p, i) => {
                 const soup = banquet.soups.find(s => s.id === p.soupId)
-                const main = banquet.mains.find(m => m.id === p.mainId)
+                const main = banquetMainName(banquet.mains.find(m => m.id === p.mainId), p.sauceId)
                 return <div key={i} className="so-review__sub">P{i + 1}: {soup?.en} · {main?.en}</div>
               })}
               <div className="so-review__sub">Served with {RICE_INCLUDED.en}</div>
               {surcharge > 0 && (
                 <div className="so-review__row"><span>Duplicate main(s) +£5 each</span><span>{formatPrice(surcharge)}</span></div>
+              )}
+              {sauceExtras > 0 && (
+                <div className="so-review__row"><span>Sauce extra(s)</span><span>{formatPrice(sauceExtras)}</span></div>
               )}
               <div className="so-review__total"><span>TOTAL</span><span>{formatPrice(total)}</span></div>
             </div>
